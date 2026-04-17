@@ -1,0 +1,130 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #1a1a2e;
+    color: #eee;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.game-container {
+    display: flex;
+    gap: 20px;
+    max-width: 1200px;
+    width: 100%;
+}
+
+.left-panel {
+    flex: 1;
+    background-color: #16213e;
+    border-radius: 10px;
+    padding: 20px;
+    border: 2px solid #0f3460;
+}
+
+.left-panel h2 {
+    color: #e94560;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.panel-content {
+    text-align: center;
+    padding: 20px;
+}
+
+.game-board {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#gameCanvas {
+    background-color: #16213e;
+    border: 3px solid #0f3460;
+    border-radius: 10px;
+    display: block;
+    margin: 0 auto;
+}
+
+.game-info {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+.info-panel {
+    background-color: #16213e;
+    border: 2px solid #0f3460;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    flex: 1;
+}
+
+.info-panel h3 {
+    color: #e94560;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.info-panel p {
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.game-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+button {
+    background-color: #0f3460;
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.1s;
+}
+
+button:hover {
+    background-color: #e94560;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+    .game-container {
+        flex-direction: column;
+    }
+    
+    .game-info {
+        flex-wrap: wrap;
+    }
+    
+    .info-panel {
+        min-width: 120px;
+    }
+}
