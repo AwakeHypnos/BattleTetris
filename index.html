@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>战斗俄罗斯方块</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="left-panel">
+            <h2>功能区</h2>
+            <div class="panel-content">
+                <p>左侧区域预留</p>
+                <p>后续可添加其他功能</p>
+            </div>
+        </div>
+        <div class="game-board">
+            <canvas id="gameCanvas"></canvas>
+            <div class="game-info">
+                <div class="info-panel">
+                    <h3>分数</h3>
+                    <p id="score">0</p>
+                </div>
+                <div class="info-panel">
+                    <h3>等级</h3>
+                    <p id="level">1</p>
+                </div>
+                <div class="info-panel">
+                    <h3>连击</h3>
+                    <p id="combo">0</p>
+                </div>
+            </div>
+            <div class="game-controls">
+                <button id="startBtn">开始游戏</button>
+                <button id="pauseBtn">暂停</button>
+                <button id="saveBtn">存档</button>
+                <button id="loadBtn">读档</button>
+                <button id="restartBtn">重新开始</button>
+            </div>
+        </div>
+    </div>
+    <script src="constants.js"></script>
+    <script src="utils.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
