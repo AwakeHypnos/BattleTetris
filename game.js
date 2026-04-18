@@ -184,11 +184,27 @@ class BattleTetris {
             }
         });
         
-        // 检查并消除连接的同色方块
-        this.checkAndClear();
+        // 应用重力，让所有悬空的方块下落到底部
+        this.applyGravity();
         
-        // 生成新方块
-        this.spawnNewPiece();
+        // 检查并消除连接的同色方块
+        const hasCleared = this.checkAndClear();
+        
+        // 如果有消除，增加连击数（每轮方块下落触发消除算一次连击）
+        // 如果没有消除，重置连击数为0
+        if (hasCleared) {
+            this.combo++;
+            // 更新最大连击数
+            if (this.combo > this.maxCombo) {
+                this.maxCombo = this.combo;
+            }
+        } else {
+            this.combo = 0;
+            // 没有消除，直接生成新方块
+            this.spawnNewPiece();
+        }
+        
+        this.render();
     }
     
     /**
@@ -208,11 +224,12 @@ class BattleTetris {
     
     /**
      * 检查并消除连接的同色方块
+     * @returns {boolean} 是否有消除发生
      */
     checkAndClear() {
         const toClear = new Set();
         
-        // 使用BFS查找所有连接的同色方块
+        // 查找所有直线连接的同色方块
         for (let y = 0; y < CONSTANTS.GRID_HEIGHT; y++) {
             for (let x = 0; x < CONSTANTS.GRID_WIDTH; x++) {
                 const color = this.grid[y][x];
@@ -227,7 +244,10 @@ class BattleTetris {
         
         if (toClear.size > 0) {
             this.clearBlocks(toClear);
+            return true;
         }
+        
+        return false;
     }
     
     /**
@@ -335,17 +355,18 @@ class BattleTetris {
         // 让悬空方块下落
         this.applyGravity();
         
-        // 增加连击
-        this.combo++;
-        
-        // 更新最大连击数
-        if (this.combo > this.maxCombo) {
-            this.maxCombo = this.combo;
-        }
-        
         // 检查是否有新的连接可以消除（连锁反应）
         setTimeout(() => {
-            this.checkAndClear();
+            const hasMoreClears = this.checkAndClear();
+            
+            // 如果没有更多消除，生成新方块
+            // 注意：连击数不在连锁反应中增加，只在 lockPiece 中增加
+            // 连击数也不在连锁反应结束时重置，而是在下一次 lockPiece 中处理
+            if (!hasMoreClears) {
+                this.spawnNewPiece();
+            }
+            
+            this.render();
         }, 100);
     }
     
