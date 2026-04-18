@@ -25,6 +25,7 @@ class BattleTetris {
         this.score = 0;
         this.level = 1;
         this.combo = 0;
+        this.maxCombo = 0;
         this.gameOver = false;
         this.isPaused = false;
         this.isStarted = false;
@@ -230,37 +231,91 @@ class BattleTetris {
     }
     
     /**
-     * 使用BFS查找连接的同色方块
+     * 查找直线连接的同色方块（横向或纵向）
      * @param {number} startX - 起始X坐标
      * @param {number} startY - 起始Y坐标
      * @param {string} color - 颜色
      * @returns {Array} 连接的方块位置数组
      */
     findConnected(startX, startY, color) {
-        const connected = [];
-        const visited = new Set();
-        const queue = [{x: startX, y: startY}];
+        // 检查横向连接
+        const horizontal = this.findHorizontalLine(startX, startY, color);
+        // 检查纵向连接
+        const vertical = this.findVerticalLine(startX, startY, color);
         
-        while (queue.length > 0) {
-            const {x, y} = queue.shift();
-            const key = `${x},${y}`;
-            
-            if (visited.has(key)) continue;
-            if (x < 0 || x >= CONSTANTS.GRID_WIDTH) continue;
-            if (y < 0 || y >= CONSTANTS.GRID_HEIGHT) continue;
-            if (this.grid[y][x] !== color) continue;
-            
-            visited.add(key);
-            connected.push({x, y});
-            
-            // 检查上下左右
-            queue.push({x: x + 1, y});
-            queue.push({x: x - 1, y});
-            queue.push({x, y: y + 1});
-            queue.push({x, y: y - 1});
+        // 合并结果并去重
+        const allConnected = new Set();
+        
+        if (horizontal.length >= CONSTANTS.CLEAR_THRESHOLD) {
+            horizontal.forEach(pos => allConnected.add(`${pos.x},${pos.y}`));
         }
         
-        return connected;
+        if (vertical.length >= CONSTANTS.CLEAR_THRESHOLD) {
+            vertical.forEach(pos => allConnected.add(`${pos.x},${pos.y}`));
+        }
+        
+        // 转换为数组格式
+        const result = [];
+        allConnected.forEach(key => {
+            const [x, y] = key.split(',').map(Number);
+            result.push({x, y});
+        });
+        
+        return result;
+    }
+    
+    /**
+     * 查找横向连接的同色方块
+     * @param {number} startX - 起始X坐标
+     * @param {number} startY - 起始Y坐标
+     * @param {string} color - 颜色
+     * @returns {Array} 连接的方块位置数组
+     */
+    findHorizontalLine(startX, startY, color) {
+        const line = [];
+        
+        // 向左查找
+        let x = startX;
+        while (x >= 0 && this.grid[startY][x] === color) {
+            line.push({x, y: startY});
+            x--;
+        }
+        
+        // 向右查找（不包括起始点）
+        x = startX + 1;
+        while (x < CONSTANTS.GRID_WIDTH && this.grid[startY][x] === color) {
+            line.push({x, y: startY});
+            x++;
+        }
+        
+        return line;
+    }
+    
+    /**
+     * 查找纵向连接的同色方块
+     * @param {number} startX - 起始X坐标
+     * @param {number} startY - 起始Y坐标
+     * @param {string} color - 颜色
+     * @returns {Array} 连接的方块位置数组
+     */
+    findVerticalLine(startX, startY, color) {
+        const line = [];
+        
+        // 向上查找
+        let y = startY;
+        while (y >= 0 && this.grid[y][startX] === color) {
+            line.push({x: startX, y});
+            y--;
+        }
+        
+        // 向下查找（不包括起始点）
+        y = startY + 1;
+        while (y < CONSTANTS.GRID_HEIGHT && this.grid[y][startX] === color) {
+            line.push({x: startX, y});
+            y++;
+        }
+        
+        return line;
     }
     
     /**
@@ -277,11 +332,16 @@ class BattleTetris {
             this.grid[y][x] = null;
         });
         
-        // 让上方方块下落
+        // 让悬空方块下落
         this.applyGravity();
         
         // 增加连击
         this.combo++;
+        
+        // 更新最大连击数
+        if (this.combo > this.maxCombo) {
+            this.maxCombo = this.combo;
+        }
         
         // 检查是否有新的连接可以消除（连锁反应）
         setTimeout(() => {
@@ -290,19 +350,23 @@ class BattleTetris {
     }
     
     /**
-     * 应用重力，让空位置上方的方块下落
+     * 应用重力，让所有悬空的方块下落到底部
+     * 每列独立处理，方块会落到列中最低的可用位置
      */
     applyGravity() {
         for (let x = 0; x < CONSTANTS.GRID_WIDTH; x++) {
+            // writePos 表示当前可以放置方块的最低位置
             let writePos = CONSTANTS.GRID_HEIGHT - 1;
             
-            // 从下往上找非空方块
+            // 从下往上遍历每一行
             for (let y = CONSTANTS.GRID_HEIGHT - 1; y >= 0; y--) {
                 if (this.grid[y][x] !== null) {
+                    // 如果当前方块不在正确的位置，将其移动到writePos
                     if (y !== writePos) {
                         this.grid[writePos][x] = this.grid[y][x];
                         this.grid[y][x] = null;
                     }
+                    // 移动到下一个可用位置
                     writePos--;
                 }
             }
@@ -317,16 +381,28 @@ class BattleTetris {
         // 基础分数
         let points = CONSTANTS.SCORE.BASE;
         
-        // 每个方块的额外分数
-        points += blocksCleared * CONSTANTS.SCORE.PER_BLOCK;
+        // 每额外消除一个方块的额外分数
+        const extraBlocks = Math.max(0, blocksCleared - 1);
+        points += extraBlocks * CONSTANTS.SCORE.PER_BLOCK;
         
-        // 连击加成
-        if (this.combo > 0) {
-            points *= Math.pow(CONSTANTS.SCORE.COMBO_MULTIPLIER, this.combo);
-        }
+        // 计算加成倍率
+        let multiplier = 1.0;
         
-        // 等级加成
-        points *= Math.pow(CONSTANTS.SCORE.LEVEL_MULTIPLIER, this.level - 1);
+        // 连击加成：每连击一次+5%，最高10层
+        const comboLayers = Math.min(this.combo, CONSTANTS.SCORE.MAX_COMBO_BUFF);
+        multiplier += comboLayers * CONSTANTS.SCORE.COMBO_BUFF;
+        
+        // 等级加成：每级+10%
+        multiplier += (this.level - 1) * CONSTANTS.SCORE.LEVEL_BUFF;
+        
+        // 倍率上限为2
+        multiplier = Math.min(multiplier, CONSTANTS.SCORE.MAX_MULTIPLIER);
+        
+        // 应用倍率
+        points *= multiplier;
+        
+        // 加上最高连击数*2的分数
+        points += this.maxCombo * CONSTANTS.SCORE.COMBO_BONUS_PER;
         
         // 取整
         points = Math.floor(points);
@@ -483,16 +559,28 @@ class BattleTetris {
     }
     
     /**
+     * 计算方块可以下落到的最低位置
+     * @returns {number} 最低Y坐标
+     */
+    getGhostY() {
+        if (!this.currentPiece) return 0;
+        
+        let dropY = this.currentPiece.y;
+        while (this.canMove(this.currentPiece, 0, dropY - this.currentPiece.y + 1)) {
+            dropY++;
+        }
+        
+        return dropY;
+    }
+    
+    /**
      * 绘制下落预览（幽灵方块）
      */
     drawGhost() {
         if (!this.currentPiece) return;
         
         // 计算最低可以下落到的位置
-        let dropY = this.currentPiece.y;
-        while (this.canMove(this.currentPiece, 0, dropY - this.currentPiece.y + 1)) {
-            dropY++;
-        }
+        const dropY = this.getGhostY();
         
         // 绘制幽灵方块
         this.ctx.globalAlpha = 0.3;
@@ -504,6 +592,22 @@ class BattleTetris {
             }
         });
         this.ctx.globalAlpha = 1;
+    }
+    
+    /**
+     * 硬降：方块立刻落到底部
+     */
+    hardDrop() {
+        if (this.gameOver || this.isPaused || !this.currentPiece || !this.isStarted) return;
+        
+        // 计算最低可以下落到的位置
+        const dropY = this.getGhostY();
+        
+        // 直接移动到底部
+        this.currentPiece.y = dropY;
+        
+        // 固定方块
+        this.lockPiece();
     }
     
     /**
@@ -613,27 +717,98 @@ class BattleTetris {
     }
     
     /**
+     * 检查是否有存档
+     * @returns {boolean} 是否有存档
+     */
+    hasSaveData() {
+        try {
+            return localStorage.getItem(CONSTANTS.SAVE_KEY) !== null;
+        } catch (e) {
+            console.error('检查存档失败:', e);
+            return false;
+        }
+    }
+    
+    /**
+     * 获取存档信息
+     * @returns {Object|null} 存档信息
+     */
+    getSaveInfo() {
+        try {
+            const saveData = localStorage.getItem(CONSTANTS.SAVE_KEY);
+            if (!saveData) return null;
+            
+            const data = JSON.parse(saveData);
+            const savedDate = new Date(data.savedAt);
+            
+            return {
+                score: data.score,
+                level: data.level,
+                savedAt: savedDate.toLocaleString(),
+                isGameOver: data.gameOver,
+                isPaused: data.isPaused
+            };
+        } catch (e) {
+            console.error('获取存档信息失败:', e);
+            return null;
+        }
+    }
+    
+    /**
+     * 格式化存档显示信息
+     * @param {Object} saveInfo - 存档信息
+     * @returns {string} 格式化的存档信息
+     */
+    formatSaveInfo(saveInfo) {
+        if (!saveInfo) {
+            return '【存档栏位 1】\n状态：空\n路径：localStorage.' + CONSTANTS.SAVE_KEY;
+        }
+        
+        let status = '进行中';
+        if (saveInfo.isGameOver) {
+            status = '已结束';
+        } else if (saveInfo.isPaused) {
+            status = '已暂停';
+        }
+        
+        return `【存档栏位 1】
+状态：${status}
+分数：${saveInfo.score}
+等级：${saveInfo.level}
+存档时间：${saveInfo.savedAt}
+路径：localStorage.${CONSTANTS.SAVE_KEY}`;
+    }
+    
+    /**
      * 存档
      */
     saveGame() {
-        if (!this.isStarted) return;
+        if (!this.isStarted) {
+            alert('请先开始游戏！');
+            return;
+        }
         
         const saveData = {
             grid: this.grid,
             score: this.score,
             level: this.level,
             combo: this.combo,
+            maxCombo: this.maxCombo,
             dropSpeed: this.dropSpeed,
             currentPiece: this.currentPiece,
             nextPiece: this.nextPiece,
             gameOver: this.gameOver,
             isPaused: this.isPaused,
+            isStarted: this.isStarted,
             savedAt: Date.now()
         };
         
         try {
             localStorage.setItem(CONSTANTS.SAVE_KEY, JSON.stringify(saveData));
-            alert('存档成功！');
+            
+            const saveInfo = this.getSaveInfo();
+            const formattedInfo = this.formatSaveInfo(saveInfo);
+            alert(`存档成功！\n\n${formattedInfo}`);
         } catch (e) {
             console.error('存档失败:', e);
             alert('存档失败，请检查浏览器存储权限。');
@@ -645,44 +820,52 @@ class BattleTetris {
      */
     loadGame() {
         try {
-            const saveData = localStorage.getItem(CONSTANTS.SAVE_KEY);
+            // 先显示存档信息让用户确认
+            const saveInfo = this.getSaveInfo();
             
-            if (!saveData) {
-                alert('没有找到存档！');
+            if (!saveInfo) {
+                alert('没有找到存档！\n\n' + this.formatSaveInfo(null));
                 return;
             }
             
+            const formattedInfo = this.formatSaveInfo(saveInfo);
+            const userConfirmed = confirm(`是否读取以下存档？\n\n${formattedInfo}`);
+            
+            if (!userConfirmed) {
+                return;
+            }
+            
+            const saveData = localStorage.getItem(CONSTANTS.SAVE_KEY);
             const data = JSON.parse(saveData);
             
-            if (!Utils.validateGameState(data)) {
-                alert('存档数据损坏！');
-                return;
-            }
+            // 停止当前游戏
+            this.stopDropTimer();
             
             // 恢复游戏状态
-            this.grid = data.grid;
-            this.score = data.score;
-            this.level = data.level;
-            this.combo = data.combo;
+            this.grid = data.grid || this.createEmptyGrid();
+            this.score = data.score || 0;
+            this.level = data.level || 1;
+            this.combo = data.combo || 0;
+            this.maxCombo = data.maxCombo || 0;
             this.dropSpeed = data.dropSpeed || CONSTANTS.INITIAL_SPEED;
-            this.currentPiece = data.currentPiece;
-            this.nextPiece = data.nextPiece;
-            this.gameOver = data.gameOver;
-            this.isPaused = data.isPaused;
-            this.isStarted = true;
+            this.currentPiece = data.currentPiece || null;
+            this.nextPiece = data.nextPiece || null;
+            this.gameOver = data.gameOver || false;
+            this.isPaused = data.isPaused || false;
+            this.isStarted = data.isStarted || false;
             
             // 更新UI
             this.updateUI();
             
             // 恢复游戏
-            if (!this.gameOver && !this.isPaused) {
+            if (this.isStarted && !this.gameOver && !this.isPaused) {
                 this.startDropTimer();
             }
             
             // 更新按钮状态
-            document.getElementById('startBtn').disabled = true;
-            document.getElementById('pauseBtn').disabled = false;
-            document.getElementById('saveBtn').disabled = false;
+            document.getElementById('startBtn').disabled = this.isStarted && !this.gameOver;
+            document.getElementById('pauseBtn').disabled = !this.isStarted || this.gameOver;
+            document.getElementById('saveBtn').disabled = !this.isStarted;
             
             if (this.isPaused) {
                 document.getElementById('pauseBtn').textContent = '继续';
@@ -695,7 +878,7 @@ class BattleTetris {
             
         } catch (e) {
             console.error('读档失败:', e);
-            alert('读档失败！');
+            alert('读档失败！错误信息：' + e.message);
         }
     }
     
@@ -737,14 +920,8 @@ class BattleTetris {
                     break;
                 case ' ':
                     e.preventDefault();
-                    this.startFastDrop();
+                    this.hardDrop();
                     break;
-            }
-        });
-        
-        document.addEventListener('keyup', (e) => {
-            if (e.key === ' ') {
-                this.stopFastDrop();
             }
         });
     }

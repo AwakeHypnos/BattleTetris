@@ -29,10 +29,13 @@ const CONSTANTS = {
     
     // 分数系统
     SCORE: {
-        BASE: 100,
-        PER_BLOCK: 25,
-        COMBO_MULTIPLIER: 1.5,
-        LEVEL_MULTIPLIER: 1.2
+        BASE: 20,
+        PER_BLOCK: 5,
+        COMBO_BUFF: 0.05,
+        MAX_COMBO_BUFF: 10,
+        COMBO_BONUS_PER: 2,
+        LEVEL_BUFF: 0.10,
+        MAX_MULTIPLIER: 2.0
     },
     
     // 等级系统
