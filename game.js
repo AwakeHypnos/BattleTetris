@@ -204,6 +204,8 @@ class BattleTetris {
             this.spawnNewPiece();
         }
         
+        // 更新UI显示（特别是连击数）
+        this.updateUI();
         this.render();
     }
     
