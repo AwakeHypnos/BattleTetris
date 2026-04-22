@@ -5,126 +5,813 @@
 }
 
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #1a1a2e;
+    font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     color: #eee;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     padding: 20px;
+    overflow: hidden;
 }
 
 .game-container {
     display: flex;
     gap: 20px;
-    max-width: 1200px;
+    max-width: 1400px;
     width: 100%;
+    height: 100vh;
+    max-height: 900px;
 }
 
-.left-panel {
+/* 左侧塔防面板 */
+.defense-panel {
     flex: 1;
-    background-color: #16213e;
-    border-radius: 10px;
-    padding: 20px;
+    min-width: 380px;
+    max-width: 400px;
+    background: rgba(22, 33, 62, 0.95);
+    border-radius: 15px;
+    padding: 15px;
     border: 2px solid #0f3460;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
-.left-panel h2 {
+.defense-header {
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #0f3460;
+}
+
+.defense-header h2 {
     color: #e94560;
-    margin-bottom: 15px;
+    font-size: 22px;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.wall-hp-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.wall-hp-label {
+    font-size: 14px;
+    color: #aaa;
+}
+
+.wall-hp-bar {
+    width: 200px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #0f3460;
+}
+
+.wall-hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e94560, #ff6b7a);
+    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+
+.wall-hp-text {
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.defense-canvas {
+    flex: 1;
+    min-height: 300px;
+    background: linear-gradient(180deg, #0a0a1a 0%, #1a1a3e 100%);
+    border: 3px solid #0f3460;
+    border-radius: 10px;
+    display: block;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* 武器积分容器 */
+.weapon-points-container {
+    background: rgba(15, 52, 96, 0.5);
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid #0f3460;
+}
+
+.weapon-points-container h3 {
+    color: #e94560;
+    font-size: 14px;
+    margin-bottom: 10px;
     text-align: center;
 }
 
-.panel-content {
-    text-align: center;
-    padding: 20px;
+.weapon-points-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
 }
 
-.game-board {
-    flex: 2;
+.weapon-point-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.weapon-point-item:hover {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.weapon-point-item.fire { border-color: #e94560; }
+.weapon-point-item.orange { border-color: #ff8c00; }
+.weapon-point-item.blue { border-color: #0f3460; }
+.weapon-point-item.green { border-color: #4ecca3; }
+.weapon-point-item.purple { border-color: #a66cff; }
+.weapon-point-item.yellow { border-color: #f9ed69; }
+
+.weapon-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.weapon-point-item.fire .weapon-icon { background: #e94560; box-shadow: 0 0 10px #e94560; }
+.weapon-point-item.orange .weapon-icon { background: #ff8c00; box-shadow: 0 0 10px #ff8c00; }
+.weapon-point-item.blue .weapon-icon { background: #0f3460; box-shadow: 0 0 10px #00d9ff; }
+.weapon-point-item.green .weapon-icon { background: #4ecca3; box-shadow: 0 0 10px #4ecca3; }
+.weapon-point-item.purple .weapon-icon { background: #a66cff; box-shadow: 0 0 10px #a66cff; }
+.weapon-point-item.yellow .weapon-icon { background: #f9ed69; box-shadow: 0 0 10px #f9ed69; }
+
+.weapon-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.weapon-name {
+    font-size: 11px;
+    color: #fff;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.weapon-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e94560, #ff6b7a);
+    transition: width 0.3s ease;
+    border-radius: 3px;
+    width: 0%;
+}
+
+.weapon-point-item.fire .progress-fill { background: linear-gradient(90deg, #e94560, #ff6b7a); }
+.weapon-point-item.orange .progress-fill { background: linear-gradient(90deg, #ff8c00, #ffaa4d); }
+.weapon-point-item.blue .progress-fill { background: linear-gradient(90deg, #0f3460, #00d9ff); }
+.weapon-point-item.green .progress-fill { background: linear-gradient(90deg, #4ecca3, #7ee8c7); }
+.weapon-point-item.purple .progress-fill { background: linear-gradient(90deg, #a66cff, #c9a6ff); }
+.weapon-point-item.yellow .progress-fill { background: linear-gradient(90deg, #f9ed69, #fff5a5); }
+
+.progress-text {
+    font-size: 10px;
+    color: #aaa;
+}
+
+/* 战斗加成容器 */
+.bonus-container {
+    background: rgba(15, 52, 96, 0.5);
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid #0f3460;
+}
+
+.bonus-container h3 {
+    color: #e94560;
+    font-size: 14px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.bonus-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.bonus-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.bonus-name {
+    color: #aaa;
+}
+
+.bonus-value {
+    color: #4ecca3;
+    font-weight: bold;
+}
+
+/* 右侧俄罗斯方块面板 */
+.tetris-panel {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+}
+
+#gameCanvas {
+    background: linear-gradient(180deg, #16213e 0%, #0f3460 100%);
+    border: 3px solid #0f3460;
+    border-radius: 10px;
+    display: block;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.game-info {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.info-panel {
+    background: linear-gradient(135deg, #16213e, #0f3460);
+    border: 2px solid #0f3460;
+    border-radius: 10px;
+    padding: 12px 20px;
+    text-align: center;
+    min-width: 90px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.info-panel h3 {
+    color: #e94560;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.info-panel p {
+    font-size: 22px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.game-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+button {
+    background: linear-gradient(135deg, #0f3460, #16213e);
+    color: #fff;
+    border: 2px solid #0f3460;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+button:hover {
+    background: linear-gradient(135deg, #e94560, #ff6b7a);
+    border-color: #e94560;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+button:disabled {
+    background: #555;
+    border-color: #444;
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+}
+
+.game-hint {
+    text-align: center;
+    padding: 10px;
+    background: rgba(15, 52, 96, 0.5);
+    border-radius: 8px;
+    border: 1px solid #0f3460;
+}
+
+.game-hint p {
+    font-size: 12px;
+    color: #aaa;
+}
+
+/* 覆盖层样式 */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.overlay.hidden {
+    display: none;
+}
+
+/* 暂停菜单 */
+.pause-menu {
+    background: linear-gradient(135deg, #16213e, #0f3460);
+    border: 3px solid #e94560;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    min-width: 300px;
+}
+
+.pause-menu h2 {
+    color: #e94560;
+    font-size: 32px;
+    margin-bottom: 30px;
+    text-shadow: 0 2px 10px rgba(233, 69, 96, 0.5);
+}
+
+.menu-options {
     display: flex;
     flex-direction: column;
     gap: 15px;
 }
 
-#gameCanvas {
-    background-color: #16213e;
-    border: 3px solid #0f3460;
-    border-radius: 10px;
-    display: block;
-    margin: 0 auto;
+.menu-btn {
+    padding: 15px 40px;
+    font-size: 16px;
+    background: linear-gradient(135deg, #0f3460, #16213e);
+    border: 2px solid #0f3460;
+    transition: all 0.3s ease;
 }
 
-.game-info {
+.menu-btn:hover {
+    background: linear-gradient(135deg, #e94560, #ff6b7a);
+    border-color: #e94560;
+}
+
+/* 主菜单 */
+.main-menu {
+    text-align: center;
+    padding: 60px;
+}
+
+.game-title {
+    font-size: 48px;
+    color: #e94560;
+    margin-bottom: 10px;
+    text-shadow: 0 4px 20px rgba(233, 69, 96, 0.5);
+    letter-spacing: 2px;
+}
+
+.game-subtitle {
+    font-size: 24px;
+    color: #4ecca3;
+    margin-bottom: 50px;
+    text-shadow: 0 2px 10px rgba(78, 204, 163, 0.3);
+}
+
+.main-menu-options {
     display: flex;
-    justify-content: space-around;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+.main-menu-btn {
+    padding: 18px 60px;
+    font-size: 18px;
+    min-width: 250px;
+}
+
+.main-menu-btn.primary {
+    background: linear-gradient(135deg, #e94560, #ff6b7a);
+    border-color: #e94560;
+    box-shadow: 0 4px 20px rgba(233, 69, 96, 0.4);
+}
+
+.main-menu-btn.primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 30px rgba(233, 69, 96, 0.6);
+}
+
+.main-menu-btn.secondary {
+    background: transparent;
+    border-color: #4ecca3;
+    color: #4ecca3;
+}
+
+.main-menu-btn.secondary:hover {
+    background: rgba(78, 204, 163, 0.2);
+}
+
+/* 武器升级菜单 */
+.weapon-upgrade-menu {
+    background: linear-gradient(135deg, #16213e, #0f3460);
+    border: 3px solid #f9ed69;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    min-width: 400px;
+}
+
+.weapon-upgrade-menu h2 {
+    color: #f9ed69;
+    font-size: 28px;
+    margin-bottom: 30px;
+    text-shadow: 0 2px 10px rgba(249, 237, 105, 0.5);
+}
+
+.weapon-info-display {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.weapon-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 40px;
+    border: 4px solid;
+}
+
+.weapon-details {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     gap: 10px;
 }
 
-.info-panel {
-    background-color: #16213e;
-    border: 2px solid #0f3460;
-    border-radius: 8px;
-    padding: 15px;
-    text-align: center;
-    flex: 1;
+.upgrade-options {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
 }
 
-.info-panel h3 {
-    color: #e94560;
-    margin-bottom: 10px;
+.upgrade-btn {
+    padding: 15px 40px;
     font-size: 16px;
 }
 
-.info-panel p {
-    font-size: 24px;
-    font-weight: bold;
-    color: #fff;
+.upgrade-btn.secondary {
+    background: transparent;
+    border-color: #888;
+    color: #888;
 }
 
-.game-controls {
+.upgrade-btn.secondary:hover {
+    background: rgba(136, 136, 136, 0.2);
+    border-color: #aaa;
+    color: #aaa;
+}
+
+/* 游戏结束菜单 */
+.game-over-menu {
+    background: linear-gradient(135deg, #16213e, #0f3460);
+    border: 3px solid #e94560;
+    border-radius: 20px;
+    padding: 50px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    min-width: 500px;
+}
+
+.game-over-menu h2 {
+    color: #e94560;
+    font-size: 36px;
+    margin-bottom: 30px;
+    text-shadow: 0 2px 10px rgba(233, 69, 96, 0.5);
+}
+
+.final-score-display {
+    margin-bottom: 30px;
+}
+
+.rating-display {
+    font-size: 48px;
+    font-weight: bold;
+    margin-bottom: 30px;
+    text-shadow: 0 4px 20px rgba(255, 215, 0, 0.5);
+}
+
+.score-breakdown {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     gap: 10px;
-    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
 }
 
-button {
-    background-color: #0f3460;
-    color: #fff;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
+.score-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 16px;
+    color: #aaa;
+}
+
+.score-item.total {
+    font-size: 20px;
     font-weight: bold;
-    transition: background-color 0.3s, transform 0.1s;
+    color: #fff;
+    border-top: 2px solid #0f3460;
+    padding-top: 10px;
+    margin-top: 10px;
 }
 
-button:hover {
-    background-color: #e94560;
+.stats-display {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
 }
 
-button:active {
-    transform: scale(0.98);
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: #aaa;
 }
 
-button:disabled {
-    background-color: #555;
-    cursor: not-allowed;
+.game-over-options {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 30px;
 }
 
-@media (max-width: 900px) {
+.game-over-btn {
+    padding: 15px 40px;
+    font-size: 16px;
+}
+
+.game-over-btn.secondary {
+    background: transparent;
+    border-color: #888;
+    color: #888;
+}
+
+/* 游戏说明菜单 */
+.how-to-play-menu {
+    background: linear-gradient(135deg, #16213e, #0f3460);
+    border: 3px solid #4ecca3;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.how-to-play-menu h2 {
+    color: #4ecca3;
+    font-size: 28px;
+    margin-bottom: 30px;
+    text-align: center;
+    text-shadow: 0 2px 10px rgba(78, 204, 163, 0.5);
+}
+
+.instructions-content {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.instruction-section h3 {
+    color: #e94560;
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.instruction-section ul {
+    list-style: none;
+    padding-left: 20px;
+}
+
+.instruction-section li {
+    padding: 8px 0;
+    color: #ccc;
+    position: relative;
+}
+
+.instruction-section li::before {
+    content: '▸';
+    color: #e94560;
+    position: absolute;
+    left: -20px;
+}
+
+.weapon-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #ccc;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+.legend-color.fire { background: #e94560; }
+.legend-color.orange { background: #ff8c00; }
+.legend-color.blue { background: #0f3460; }
+.legend-color.green { background: #4ecca3; }
+.legend-color.purple { background: #a66cff; }
+.legend-color.yellow { background: #f9ed69; }
+
+.close-btn {
+    margin-top: 30px;
+    width: 100%;
+    padding: 15px;
+    font-size: 16px;
+    background: linear-gradient(135deg, #4ecca3, #2ecc71);
+    border-color: #4ecca3;
+}
+
+.close-btn:hover {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    border-color: #2ecc71;
+}
+
+/* 滚动条样式 */
+.how-to-play-menu::-webkit-scrollbar {
+    width: 8px;
+}
+
+.how-to-play-menu::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.how-to-play-menu::-webkit-scrollbar-thumb {
+    background: #4ecca3;
+    border-radius: 4px;
+}
+
+.how-to-play-menu::-webkit-scrollbar-thumb:hover {
+    background: #2ecc71;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
     .game-container {
         flex-direction: column;
+        align-items: center;
+        height: auto;
+        max-height: none;
     }
     
+    .defense-panel {
+        max-width: 600px;
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .defense-canvas {
+        min-height: 250px;
+        max-height: 300px;
+    }
+    
+    .tetris-panel {
+        width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
     .game-info {
-        flex-wrap: wrap;
+        flex-direction: column;
+        align-items: center;
     }
     
     .info-panel {
-        min-width: 120px;
+        width: 100%;
+        max-width: 200px;
     }
+    
+    .game-controls {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .game-controls button {
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .weapon-points-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .main-menu {
+        padding: 30px;
+    }
+    
+    .game-title {
+        font-size: 32px;
+    }
+    
+    .game-subtitle {
+        font-size: 18px;
+    }
+    
+    .pause-menu,
+    .weapon-upgrade-menu,
+    .game-over-menu,
+    .how-to-play-menu {
+        padding: 20px;
+        min-width: 90%;
+        max-width: 90%;
+    }
+}
+
+/* 动画效果 */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 10px currentColor; }
+    50% { box-shadow: 0 0 25px currentColor, 0 0 40px currentColor; }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* 用于强调的动画类 */
+.animate-pulse {
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.animate-glow {
+    animation: glow 2s ease-in-out infinite;
+}
+
+.animate-shake {
+    animation: shake 0.3s ease-in-out;
 }

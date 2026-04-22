@@ -3,24 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>战斗俄罗斯方块</title>
+    <title>战斗俄罗斯方块 - 塔防融合版</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- 主游戏容器 -->
     <div class="game-container">
-        <div class="left-panel">
-            <h2>功能区</h2>
-            <div class="panel-content">
-                <p>左侧区域预留</p>
-                <p>后续可添加其他功能</p>
+        <!-- 左侧塔防区域 -->
+        <div class="defense-panel">
+            <div class="defense-header">
+                <h2>城堡防御</h2>
+                <div class="wall-hp-container">
+                    <div class="wall-hp-label">城墙血量</div>
+                    <div class="wall-hp-bar">
+                        <div id="wallHpFill" class="wall-hp-fill"></div>
+                    </div>
+                    <div class="wall-hp-text" id="wallHpText">100/100</div>
+                </div>
+            </div>
+            
+            <!-- 塔防游戏画布 -->
+            <canvas id="defenseCanvas" class="defense-canvas"></canvas>
+            
+            <!-- 武器积分显示 -->
+            <div class="weapon-points-container">
+                <h3>武器积分</h3>
+                <div class="weapon-points-grid">
+                    <div class="weapon-point-item fire">
+                        <div class="weapon-icon"></div>
+                        <div class="weapon-info">
+                            <div class="weapon-name">焰爆弹</div>
+                            <div class="weapon-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="fireProgress"></div>
+                                </div>
+                                <div class="progress-text" id="firePoints">0/50</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="weapon-point-item orange">
+                        <div class="weapon-icon"></div>
+                        <div class="weapon-info">
+                            <div class="weapon-name">穿甲弹</div>
+                            <div class="weapon-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="orangeProgress"></div>
+                                </div>
+                                <div class="progress-text" id="orangePoints">0/50</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="weapon-point-item blue">
+                        <div class="weapon-icon"></div>
+                        <div class="weapon-info">
+                            <div class="weapon-name">冰结弹</div>
+                            <div class="weapon-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="blueProgress"></div>
+                                </div>
+                                <div class="progress-text" id="bluePoints">0/50</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="weapon-point-item green">
+                        <div class="weapon-icon"></div>
+                        <div class="weapon-info">
+                            <div class="weapon-name">毒液弹</div>
+                            <div class="weapon-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="greenProgress"></div>
+                                </div>
+                                <div class="progress-text" id="greenPoints">0/50</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="weapon-point-item purple">
+                        <div class="weapon-icon"></div>
+                        <div class="weapon-info">
+                            <div class="weapon-name">空间弹</div>
+                            <div class="weapon-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="purpleProgress"></div>
+                                </div>
+                                <div class="progress-text" id="purplePoints">0/50</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="weapon-point-item yellow">
+                        <div class="weapon-icon"></div>
+                        <div class="weapon-info">
+                            <div class="weapon-name">散弹</div>
+                            <div class="weapon-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="yellowProgress"></div>
+                                </div>
+                                <div class="progress-text" id="yellowPoints">0/50</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 战斗加成显示 -->
+            <div class="bonus-container">
+                <h3>战斗加成</h3>
+                <div class="bonus-list">
+                    <div class="bonus-item">
+                        <span class="bonus-name">伤害加成:</span>
+                        <span class="bonus-value" id="damageBonus">+0%</span>
+                    </div>
+                    <div class="bonus-item">
+                        <span class="bonus-name">击杀数:</span>
+                        <span class="bonus-value" id="killCount">0</span>
+                    </div>
+                    <div class="bonus-item">
+                        <span class="bonus-name">生存时间:</span>
+                        <span class="bonus-value" id="survivalTime">00:00</span>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="game-board">
+        
+        <!-- 右侧俄罗斯方块区域 -->
+        <div class="tetris-panel">
             <canvas id="gameCanvas"></canvas>
             <div class="game-info">
                 <div class="info-panel">
-                    <h3>分数</h3>
-                    <p id="score">0</p>
+                    <h3>方块分数</h3>
+                    <p id="tetrisScore">0</p>
+                </div>
+                <div class="info-panel">
+                    <h3>塔防分数</h3>
+                    <p id="defenseScore">0</p>
+                </div>
+                <div class="info-panel">
+                    <h3>总分</h3>
+                    <p id="totalScore">0</p>
                 </div>
                 <div class="info-panel">
                     <h3>等级</h3>
@@ -38,8 +156,141 @@
                 <button id="loadBtn">读档</button>
                 <button id="restartBtn">重新开始</button>
             </div>
+            <div class="game-hint">
+                <p>操作: ←→移动 | ↑旋转 | ↓加速 | 空格硬降 | ESC暂停</p>
+            </div>
         </div>
     </div>
+    
+    <!-- 暂停菜单覆盖层 -->
+    <div id="pauseOverlay" class="overlay hidden">
+        <div class="pause-menu">
+            <h2>游戏暂停</h2>
+            <div class="menu-options">
+                <button class="menu-btn" id="resumeBtn">继续游戏</button>
+                <button class="menu-btn" id="loadMenuBtn">读取存档</button>
+                <button class="menu-btn" id="saveMenuBtn">保存存档</button>
+                <button class="menu-btn" id="mainMenuBtn">返回主菜单</button>
+                <button class="menu-btn" id="exitBtn">退出游戏</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 武器升级选择界面 -->
+    <div id="weaponUpgradeOverlay" class="overlay hidden">
+        <div class="weapon-upgrade-menu">
+            <h2>武器升级可用！</h2>
+            <div class="weapon-info-display">
+                <div class="weapon-preview" id="upgradeWeaponPreview"></div>
+                <div class="weapon-details" id="upgradeWeaponDetails"></div>
+            </div>
+            <div class="upgrade-options">
+                <button class="upgrade-btn" id="confirmUpgrade">确认升级</button>
+                <button class="upgrade-btn secondary" id="deferUpgrade">稍后升级</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 游戏结束界面 -->
+    <div id="gameOverOverlay" class="overlay hidden">
+        <div class="game-over-menu">
+            <h2>游戏结束</h2>
+            <div class="final-score-display">
+                <div class="rating-display" id="ratingDisplay"></div>
+                <div class="score-breakdown">
+                    <div class="score-item">
+                        <span>方块分数:</span>
+                        <span id="finalTetrisScore">0</span>
+                    </div>
+                    <div class="score-item">
+                        <span>塔防分数:</span>
+                        <span id="finalDefenseScore">0</span>
+                    </div>
+                    <div class="score-item total">
+                        <span>最终得分:</span>
+                        <span id="finalTotalScore">0</span>
+                    </div>
+                </div>
+                <div class="stats-display">
+                    <div class="stat-item">
+                        <span>击杀敌人:</span>
+                        <span id="finalKills">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>最高连击:</span>
+                        <span id="finalCombo">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>生存时间:</span>
+                        <span id="finalSurvival">00:00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>达到等级:</span>
+                        <span id="finalLevel">1</span>
+                    </div>
+                </div>
+            </div>
+            <div class="game-over-options">
+                <button class="game-over-btn" id="playAgainBtn">再来一局</button>
+                <button class="game-over-btn secondary" id="returnToMenuBtn">返回主菜单</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 主菜单 -->
+    <div id="mainMenuOverlay" class="overlay">
+        <div class="main-menu">
+            <h1 class="game-title">战斗俄罗斯方块</h1>
+            <p class="game-subtitle">塔防融合版</p>
+            <div class="main-menu-options">
+                <button class="main-menu-btn primary" id="newGameBtn">新游戏</button>
+                <button class="main-menu-btn" id="loadGameBtn">读取存档</button>
+                <button class="main-menu-btn secondary" id="howToPlayBtn">游戏说明</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 游戏说明 -->
+    <div id="howToPlayOverlay" class="overlay hidden">
+        <div class="how-to-play-menu">
+            <h2>游戏说明</h2>
+            <div class="instructions-content">
+                <div class="instruction-section">
+                    <h3>基本操作</h3>
+                    <ul>
+                        <li>← → / A D：左右移动方块</li>
+                        <li>↑ / W：旋转方块</li>
+                        <li>↓ / S：加速下落</li>
+                        <li>空格：硬降（直接落到底部）</li>
+                        <li>ESC：暂停游戏</li>
+                    </ul>
+                </div>
+                <div class="instruction-section">
+                    <h3>游戏规则</h3>
+                    <ul>
+                        <li>右侧消除方块：同色4个以上直线连接可消除</li>
+                        <li>左侧塔防：消除不同颜色方块获得对应武器积分</li>
+                        <li>积分达到阈值自动升级对应武器</li>
+                        <li>炮塔自动攻击最近的敌人</li>
+                        <li>敌人突破城墙扣血，血量归零游戏结束</li>
+                    </ul>
+                </div>
+                <div class="instruction-section">
+                    <h3>颜色武器对应</h3>
+                    <div class="weapon-legend">
+                        <div class="legend-item"><span class="legend-color fire"></span>红色 - 焰爆弹（AOE伤害）</div>
+                        <div class="legend-item"><span class="legend-color orange"></span>橙色 - 穿甲弹（穿透伤害）</div>
+                        <div class="legend-item"><span class="legend-color blue"></span>蓝色 - 冰结弹（冰冻减速）</div>
+                        <div class="legend-item"><span class="legend-color green"></span>绿色 - 毒液弹（持续中毒）</div>
+                        <div class="legend-item"><span class="legend-color purple"></span>紫色 - 空间弹（阻拦横线）</div>
+                        <div class="legend-item"><span class="legend-color yellow"></span>黄色 - 散弹（多方向散射）</div>
+                    </div>
+                </div>
+            </div>
+            <button class="close-btn" id="closeHowToPlay">关闭</button>
+        </div>
+    </div>
+
     <script src="constants.js"></script>
     <script src="utils.js"></script>
     <script src="game.js"></script>
