@@ -57,9 +57,9 @@ class Enemy {
     
     applyFreeze(duration, slowPercent) {
         this.isFrozen = true;
-        this.frozenUntil = Date.now() + duration;
+        this.frozenUntil = performance.now() + duration;
         this.isSlowed = true;
-        this.slowUntil = Date.now() + duration;
+        this.slowUntil = performance.now() + duration;
         this.slowPercent = slowPercent;
         this.speed = this.baseSpeed * (1 - slowPercent);
     }
@@ -67,8 +67,8 @@ class Enemy {
     applyPoison(damage, duration) {
         this.isPoisoned = true;
         this.poisonDamage = damage;
-        this.poisonUntil = Date.now() + duration;
-        this.lastPoisonTick = Date.now();
+        this.poisonUntil = performance.now() + duration;
+        this.lastPoisonTick = performance.now();
     }
     
     takeDamage(damage) {
@@ -83,39 +83,76 @@ class Enemy {
         const y = this.y;
         const size = this.size;
         
-        ctx.beginPath();
-        ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+        const stickHeadRadius = size * 0.3;
+        const stickBodyLength = size * 0.5;
+        const stickArmLength = size * 0.35;
+        const stickLegLength = size * 0.4;
         
+        let bodyColor = this.color;
         if (this.isFrozen) {
-            ctx.fillStyle = '#87CEEB';
+            bodyColor = '#87CEEB';
             ctx.shadowColor = '#00FFFF';
             ctx.shadowBlur = 15;
         } else if (this.isPoisoned) {
-            ctx.fillStyle = '#90EE90';
+            bodyColor = '#90EE90';
             ctx.shadowColor = '#00FF00';
             ctx.shadowBlur = 10;
-        } else {
-            ctx.fillStyle = this.color;
-            if (this.isElite) {
-                ctx.shadowColor = this.color;
-                ctx.shadowBlur = 15;
-            }
+        } else if (this.isElite) {
+            ctx.shadowColor = this.color;
+            ctx.shadowBlur = 15;
         }
         
+        ctx.strokeStyle = bodyColor;
+        ctx.fillStyle = bodyColor;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        ctx.beginPath();
+        ctx.arc(x, y - stickBodyLength - stickHeadRadius, stickHeadRadius, 0, Math.PI * 2);
         ctx.fill();
         
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, y - stickBodyLength);
+        ctx.lineTo(x, y);
         ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(x, y - stickBodyLength * 0.6);
+        ctx.lineTo(x - stickArmLength, y - stickBodyLength * 0.3);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(x, y - stickBodyLength * 0.6);
+        ctx.lineTo(x + stickArmLength, y - stickBodyLength * 0.3);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x - stickLegLength, y + stickLegLength);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + stickLegLength, y + stickLegLength);
+        ctx.stroke();
+        
+        if (this.isTank) {
+            ctx.beginPath();
+            ctx.arc(x, y - stickBodyLength - stickHeadRadius, stickHeadRadius * 1.3, 0, Math.PI * 2);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
         
         ctx.shadowBlur = 0;
         
-        const barWidth = size;
+        const barWidth = size * 1.5;
         const barHeight = 4;
         const barX = x - barWidth / 2;
-        const barY = y - size / 2 - 10;
+        const barY = y - stickBodyLength - stickHeadRadius * 2 - 12;
         
-        ctx.fillStyle = '#333';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         ctx.fillRect(barX, barY, barWidth, barHeight);
         
         const hpPercent = this.currentHP / this.maxHP;
@@ -237,9 +274,9 @@ class SpaceLine {
         this.width = width;
         this.duration = duration;
         this.damage = damage;
-        this.createdAt = Date.now();
+        this.createdAt = performance.now();
         this.isActive = true;
-        this.lastDamageTick = Date.now();
+        this.lastDamageTick = performance.now();
         this.damageTickRate = 500;
     }
     
@@ -260,7 +297,7 @@ class SpaceLine {
     }
     
     draw(ctx) {
-        const progress = 1 - (Date.now() - this.createdAt) / this.duration;
+        const progress = 1 - (performance.now() - this.createdAt) / this.duration;
         
         ctx.save();
         ctx.globalAlpha = progress * 0.7;
@@ -342,16 +379,16 @@ class Turret {
         
         const range = this.getEffectiveRange();
         let closestEnemy = null;
-        let closestDistance = Infinity;
+        let lowestY = -Infinity;
         
         enemies.forEach(enemy => {
             const dx = enemy.x - this.x;
             const dy = enemy.y - this.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            if (distance <= range && enemy.y > closestDistance) {
+            if (distance <= range && enemy.y > lowestY) {
                 closestEnemy = enemy;
-                closestDistance = enemy.y;
+                lowestY = enemy.y;
             }
         });
         
@@ -521,8 +558,8 @@ class DefenseSystem {
     }
     
     start() {
-        this.gameStartTime = Date.now();
-        this.lastSpawnTime = Date.now();
+        this.gameStartTime = performance.now();
+        this.lastSpawnTime = performance.now();
     }
     
     reset() {
@@ -534,8 +571,8 @@ class DefenseSystem {
         this.defenseScore = 0;
         this.difficultyMultiplier = 1;
         this.spawnInterval = CONSTANTS.ENEMY.baseSpawnInterval;
-        this.lastSpawnTime = Date.now();
-        this.gameStartTime = Date.now();
+        this.lastSpawnTime = performance.now();
+        this.gameStartTime = performance.now();
         
         this.weaponPoints = {
             FIRE: 0,
@@ -614,14 +651,14 @@ class DefenseSystem {
     spawnEnemy() {
         const types = ['NORMAL', 'NORMAL', 'NORMAL', 'FAST', 'TANK'];
         
-        const elapsedMinutes = (Date.now() - this.gameStartTime) / 60000;
+        const elapsedMinutes = (performance.now() - this.gameStartTime) / 60000;
         if (elapsedMinutes > 2) {
             types.push('ELITE');
         }
         
         const type = Utils.randomChoice(types);
         const x = Utils.randomInt(30, this.canvas.width - 30);
-        const y = -30;
+        const y = -40;
         
         const enemy = new Enemy(x, y, type, this.difficultyMultiplier);
         this.enemies.push(enemy);

@@ -59,9 +59,9 @@ const CONSTANTS = {
     
     // 塔防区域尺寸
     DEFENSE: {
-        CANVAS_WIDTH: 350,
-        CANVAS_HEIGHT: 600,
-        WALL_HEIGHT: 50,
+        CANVAS_WIDTH: 480,
+        CANVAS_HEIGHT: 750,
+        WALL_HEIGHT: 60,
         TURRET_SLOTS: 7,
         TURRET_SLOT_WIDTH: 50
     },
@@ -168,10 +168,10 @@ const CONSTANTS = {
     // 敌人属性（数值平衡）
     ENEMY: {
         baseHP: 80,
-        baseSpeed: 0.8,
-        baseSpawnInterval: 3000,
-        minSpawnInterval: 800,
-        size: 24,
+        baseSpeed: 2.5,
+        baseSpawnInterval: 1500,
+        minSpawnInterval: 500,
+        size: 28,
         scorePerKill: 10,
         scorePerHP: 0.5
     },
