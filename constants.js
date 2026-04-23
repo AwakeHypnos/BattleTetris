@@ -89,7 +89,7 @@ const CONSTANTS = {
     // 武器基础属性（数值平衡）
     WEAPONS: {
         FIRE: {
-            damage: 25,
+            damage: 5,
             attackSpeed: 1200,
             range: 200,
             aoeRadius: 60,
@@ -98,7 +98,7 @@ const CONSTANTS = {
             description: '小范围AOE伤害'
         },
         PIERCE: {
-            damage: 35,
+            damage: 7,
             attackSpeed: 1500,
             range: 500,
             pierceCount: 5,
@@ -107,7 +107,7 @@ const CONSTANTS = {
             description: '穿透多个敌人的直线伤害'
         },
         ICE: {
-            damage: 20,
+            damage: 4,
             attackSpeed: 1000,
             range: 250,
             freezeDuration: 2000,
@@ -117,10 +117,10 @@ const CONSTANTS = {
             description: '伤害输出+短暂冰冻减速'
         },
         POISON: {
-            damage: 15,
+            damage: 3,
             attackSpeed: 1100,
             range: 280,
-            poisonDamage: 8,
+            poisonDamage: 2,
             poisonDuration: 5000,
             poisonTickRate: 500,
             bulletSpeed: 6,
@@ -128,7 +128,7 @@ const CONSTANTS = {
             description: '伤害输出+持续中毒伤害'
         },
         SPACE: {
-            damage: 18,
+            damage: 4,
             attackSpeed: 1800,
             range: 350,
             lineWidth: 8,
@@ -138,7 +138,7 @@ const CONSTANTS = {
             description: '生成阻拦横线+持续伤害'
         },
         SHOTGUN: {
-            damage: 12,
+            damage: 2,
             attackSpeed: 900,
             range: 220,
             bulletCount: 5,
@@ -167,10 +167,10 @@ const CONSTANTS = {
     
     // 敌人属性（数值平衡）
     ENEMY: {
-        baseHP: 80,
-        baseSpeed: 2.5,
-        baseSpawnInterval: 1500,
-        minSpawnInterval: 500,
+        baseHP: 40,
+        baseSpeed: 0.625,
+        baseSpawnInterval: 3000,
+        minSpawnInterval: 1000,
         size: 28,
         scorePerKill: 10,
         scorePerHP: 0.5
@@ -178,11 +178,11 @@ const CONSTANTS = {
     
     // 敌人难度曲线
     ENEMY_DIFFICULTY: {
-        hpIncreasePerMinute: 15,
-        speedIncreasePerMinute: 0.05,
-        spawnRateIncreasePerMinute: 200,
-        maxHpMultiplier: 8,
-        maxSpeedMultiplier: 2.5
+        hpIncreasePerMinute: 8,
+        speedIncreasePerMinute: 0.02,
+        spawnRateIncreasePerMinute: 100,
+        maxHpMultiplier: 5,
+        maxSpeedMultiplier: 2
     },
     
     // 敌人类型
