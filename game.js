@@ -286,6 +286,14 @@ class SpaceLine {
             return;
         }
         
+        enemies.forEach(enemy => {
+            if (Math.abs(enemy.y - this.y) < 20) {
+                if (!enemy.isFrozen) {
+                    enemy.applyFreeze(this.damageTickRate * 2, 0.9);
+                }
+            }
+        });
+        
         if (currentTime - this.lastDamageTick >= this.damageTickRate) {
             enemies.forEach(enemy => {
                 if (Math.abs(enemy.y - this.y) < 20) {
