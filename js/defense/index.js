@@ -307,7 +307,7 @@ class DefenseSystem {
                     
                     if (bullet.createsSpaceLine) {
                         const lineWidth = this.canvas.width * (CONSTANTS.WEAPONS.SPACE.lineWidthMultiplier || 0.25);
-                        const lineStartX = (this.canvas.width - lineWidth) / 2;
+                        const lineStartX = Math.max(0, Math.min(enemy.x - lineWidth / 2, this.canvas.width - lineWidth));
                         
                         const spaceLine = new SpaceLine(
                             enemy.y,
