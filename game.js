@@ -269,11 +269,12 @@ class Bullet {
 // 空间线类（紫色武器效果）
 // ============================================
 class SpaceLine {
-    constructor(y, width, duration, damage) {
+    constructor(y, width, duration, damage, startX = 0) {
         this.y = y;
         this.width = width;
         this.duration = duration;
         this.damage = damage;
+        this.startX = startX;
         this.createdAt = performance.now();
         this.isActive = true;
         this.lastDamageTick = performance.now();
@@ -286,8 +287,12 @@ class SpaceLine {
             return;
         }
         
+        const lineStartX = this.startX;
+        const lineEndX = this.startX + this.width;
+        
         enemies.forEach(enemy => {
-            if (Math.abs(enemy.y - this.y) < 20) {
+            if (Math.abs(enemy.y - this.y) < 20 && 
+                enemy.x >= lineStartX && enemy.x <= lineEndX) {
                 if (!enemy.isFrozen) {
                     enemy.applyFreeze(this.damageTickRate * 2, 0.9);
                 }
@@ -296,7 +301,8 @@ class SpaceLine {
         
         if (currentTime - this.lastDamageTick >= this.damageTickRate) {
             enemies.forEach(enemy => {
-                if (Math.abs(enemy.y - this.y) < 20) {
+                if (Math.abs(enemy.y - this.y) < 20 && 
+                    enemy.x >= lineStartX && enemy.x <= lineEndX) {
                     enemy.takeDamage(this.damage);
                 }
             });
@@ -311,8 +317,8 @@ class SpaceLine {
         ctx.globalAlpha = progress * 0.7;
         
         ctx.beginPath();
-        ctx.moveTo(0, this.y);
-        ctx.lineTo(this.width, this.y);
+        ctx.moveTo(this.startX, this.y);
+        ctx.lineTo(this.startX + this.width, this.y);
         ctx.strokeStyle = CONSTANTS.WEAPONS.SPACE.color;
         ctx.lineWidth = CONSTANTS.WEAPONS.SPACE.lineWidth;
         ctx.shadowColor = CONSTANTS.WEAPONS.SPACE.color;
@@ -555,14 +561,32 @@ class DefenseSystem {
         const slotCount = CONSTANTS.DEFENSE.TURRET_SLOTS;
         const slotWidth = this.canvas.width / (slotCount + 1);
         
+        const centerX = slotWidth * Math.floor(slotCount / 2 + 1);
+        const turret = new Turret(centerX, wallY - 20, 'FIRE', 0);
+        this.turrets.push(turret);
+        
+        this.availableSlots = [];
         for (let i = 0; i < slotCount; i++) {
             const x = slotWidth * (i + 1);
-            const weaponTypes = ['FIRE', 'PIERCE', 'ICE', 'POISON', 'SPACE', 'SHOTGUN'];
-            const weaponType = weaponTypes[i % weaponTypes.length];
-            
-            const turret = new Turret(x, wallY - 20, weaponType, i);
-            this.turrets.push(turret);
+            if (Math.abs(x - centerX) > 10) {
+                this.availableSlots.push({ x, index: this.availableSlots.length + 1 });
+            }
         }
+        this.availableSlots.sort((a, b) => Math.abs(a.x - centerX) - Math.abs(b.x - centerX));
+        this.slotIndex = 0;
+    }
+    
+    addTurretForWeapon(weaponType) {
+        if (this.availableSlots.length === 0) return null;
+        
+        const wallY = this.canvas.height - CONSTANTS.DEFENSE.WALL_HEIGHT / 2;
+        const slot = this.availableSlots.shift();
+        
+        const turret = new Turret(slot.x, wallY - 20, weaponType, slot.index);
+        turret.level = 1;
+        this.turrets.push(turret);
+        
+        return turret;
     }
     
     start() {
@@ -638,6 +662,14 @@ class DefenseSystem {
         if (!this.pendingUpgrade) return false;
         
         const { weaponType, newLevel } = this.pendingUpgrade;
+        
+        if (newLevel === 1 && weaponType !== 'FIRE') {
+            const existingTurret = this.turrets.find(t => t.weaponType === weaponType);
+            if (!existingTurret) {
+                this.addTurretForWeapon(weaponType);
+            }
+        }
+        
         this.weaponLevels[weaponType] = newLevel;
         
         const turret = this.turrets.find(t => t.weaponType === weaponType);
@@ -656,7 +688,7 @@ class DefenseSystem {
         this.isUpgradePending = false;
     }
     
-    spawnEnemy() {
+    spawnEnemy(count = 1) {
         const types = ['NORMAL', 'NORMAL', 'NORMAL', 'FAST', 'TANK'];
         
         const elapsedMinutes = (performance.now() - this.gameStartTime) / 60000;
@@ -664,29 +696,54 @@ class DefenseSystem {
             types.push('ELITE');
         }
         
-        const type = Utils.randomChoice(types);
-        const x = Utils.randomInt(30, this.canvas.width - 30);
-        const y = -40;
+        for (let i = 0; i < count; i++) {
+            const type = Utils.randomChoice(types);
+            const x = Utils.randomInt(30, this.canvas.width - 30);
+            const y = -40 - Math.random() * 60;
+            
+            const enemy = new Enemy(x, y, type, this.difficultyMultiplier);
+            this.enemies.push(enemy);
+        }
+    }
+    
+    spawnWave(waveNumber) {
+        const baseCount = CONSTANTS.ENEMY_SPAWN.waveBaseCount;
+        const increment = CONSTANTS.ENEMY_SPAWN.waveIncrementCount;
+        const count = baseCount + (waveNumber - 1) * increment;
         
-        const enemy = new Enemy(x, y, type, this.difficultyMultiplier);
-        this.enemies.push(enemy);
+        this.spawnEnemy(count);
     }
     
     update(currentTime) {
-        const elapsedMinutes = (currentTime - this.gameStartTime) / 60000;
+        const elapsedSeconds = (currentTime - this.gameStartTime) / 1000;
+        const elapsedMinutes = elapsedSeconds / 60;
         
+        const periodsOf30Seconds = Math.floor(elapsedSeconds / 30);
         this.difficultyMultiplier = Math.min(
             CONSTANTS.ENEMY_DIFFICULTY.maxHpMultiplier,
-            1 + elapsedMinutes * (CONSTANTS.ENEMY_DIFFICULTY.hpIncreasePerMinute / 100)
+            1 + periodsOf30Seconds * (CONSTANTS.ENEMY_DIFFICULTY.hpIncreasePer30Seconds / 100)
         );
         
-        this.spawnInterval = Math.max(
-            CONSTANTS.ENEMY.minSpawnInterval,
-            CONSTANTS.ENEMY.baseSpawnInterval - elapsedMinutes * CONSTANTS.ENEMY_DIFFICULTY.spawnRateIncreasePerMinute
-        );
+        this.spawnInterval = CONSTANTS.ENEMY.baseSpawnInterval;
+        
+        if (this.lastWaveTime === undefined) {
+            this.lastWaveTime = 0;
+        }
+        
+        const waveIntervalMinutes = CONSTANTS.ENEMY_SPAWN.waveIntervalMinutes;
+        const currentWaveNumber = Math.floor(elapsedMinutes / waveIntervalMinutes);
+        const lastWaveNumber = Math.floor(this.lastWaveTime / waveIntervalMinutes);
+        
+        if (currentWaveNumber > lastWaveNumber && currentWaveNumber >= 1) {
+            this.spawnWave(currentWaveNumber);
+            this.lastWaveTime = elapsedMinutes;
+        }
         
         if (currentTime - this.lastSpawnTime >= this.spawnInterval) {
-            this.spawnEnemy();
+            const extraCount = Math.floor(elapsedSeconds / 30) * CONSTANTS.ENEMY_SPAWN.extraCountPer30Seconds;
+            const totalCount = CONSTANTS.ENEMY_SPAWN.baseCount + extraCount;
+            
+            this.spawnEnemy(totalCount);
             this.lastSpawnTime = currentTime;
         }
         
@@ -742,11 +799,15 @@ class DefenseSystem {
                     }
                     
                     if (bullet.createsSpaceLine) {
+                        const lineWidth = this.canvas.width * (CONSTANTS.WEAPONS.SPACE.lineWidthMultiplier || 0.25);
+                        const lineStartX = (this.canvas.width - lineWidth) / 2;
+                        
                         const spaceLine = new SpaceLine(
                             enemy.y,
-                            this.canvas.width,
+                            lineWidth,
                             bullet.lineDuration,
-                            bullet.damage * 0.3
+                            bullet.damage * 0.3,
+                            lineStartX
                         );
                         this.spaceLines.push(spaceLine);
                     }
@@ -929,6 +990,8 @@ class BattleTetrisGame {
         this.nextPiece = null;
         this.dropSpeed = CONSTANTS.INITIAL_SPEED;
         this.isFastDrop = false;
+        
+        this.tetrisEnded = false;
         
         this.totalScore = 0;
         this.survivalTime = 0;
@@ -1144,7 +1207,7 @@ class BattleTetrisGame {
         if (!this.currentPiece) return;
         
         if (this.currentPiece.y <= 0) {
-            this.endGame();
+            this.endTetrisGame();
             return;
         }
         
@@ -1174,12 +1237,20 @@ class BattleTetrisGame {
         this.updateUI();
     }
     
+    endTetrisGame() {
+        if (this.tetrisEnded) return;
+        
+        this.tetrisEnded = true;
+        this.currentPiece = null;
+        this.stopDropTimer();
+    }
+    
     spawnNewPiece() {
         this.currentPiece = this.nextPiece || this.generatePiece();
         this.nextPiece = this.generatePiece();
         
         if (!this.canMove(this.currentPiece)) {
-            this.endGame();
+            this.endTetrisGame();
         }
     }
     
