@@ -800,7 +800,7 @@ class DefenseSystem {
                     
                     if (bullet.createsSpaceLine) {
                         const lineWidth = this.canvas.width * (CONSTANTS.WEAPONS.SPACE.lineWidthMultiplier || 0.25);
-                        const lineStartX = (this.canvas.width - lineWidth) / 2;
+                        const lineStartX = Math.max(0, Math.min(enemy.x - lineWidth / 2, this.canvas.width - lineWidth));
                         
                         const spaceLine = new SpaceLine(
                             enemy.y,
@@ -1422,7 +1422,7 @@ class BattleTetrisGame {
     }
     
     checkLevelUp() {
-        const newLevel = Math.floor(this.tetrisScore / (CONSTANTS.LEVEL.BASE_LINES_PER_LEVEL * CONSTANTS.SCORE.BASE)) + 1;
+        const newLevel = Math.floor(this.tetrisScore / CONSTANTS.LEVEL.SCORE_PER_LEVEL) + 1;
         
         if (newLevel > this.level) {
             this.level = newLevel;

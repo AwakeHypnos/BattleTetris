@@ -40,6 +40,7 @@ const CONSTANTS = {
     
     // 等级系统
     LEVEL: {
+        SCORE_PER_LEVEL: 100,
         BASE_LINES_PER_LEVEL: 10,
         SPEED_INCREASE: 0.85
     },
