@@ -29,7 +29,7 @@ const CONSTANTS = {
     
     // 分数系统
     SCORE: {
-        BASE: 20,
+        BASE: 0,
         PER_BLOCK: 5,
         COMBO_BUFF: 0.05,
         MAX_COMBO_BUFF: 10,
@@ -89,17 +89,17 @@ const CONSTANTS = {
     // 武器基础属性（数值平衡）
     WEAPONS: {
         FIRE: {
-            damage: 5,
-            attackSpeed: 1200,
-            range: 200,
+            damage: 12,
+            attackSpeed: 1000,
+            range: 250,
             aoeRadius: 60,
             bulletSpeed: 8,
             color: '#e94560',
             description: '小范围AOE伤害'
         },
         PIERCE: {
-            damage: 7,
-            attackSpeed: 1500,
+            damage: 16,
+            attackSpeed: 1200,
             range: 500,
             pierceCount: 5,
             bulletSpeed: 12,
@@ -107,68 +107,69 @@ const CONSTANTS = {
             description: '穿透多个敌人的直线伤害'
         },
         ICE: {
-            damage: 4,
-            attackSpeed: 1000,
+            damage: 10,
+            attackSpeed: 900,
             range: 250,
-            freezeDuration: 2000,
-            slowPercent: 0.5,
+            freezeDuration: 2500,
+            slowPercent: 0.6,
             bulletSpeed: 7,
             color: '#0f3460',
             description: '伤害输出+短暂冰冻减速'
         },
         POISON: {
-            damage: 3,
-            attackSpeed: 1100,
+            damage: 8,
+            attackSpeed: 1000,
             range: 280,
-            poisonDamage: 2,
-            poisonDuration: 5000,
+            poisonDamage: 4,
+            poisonDuration: 6000,
             poisonTickRate: 500,
             bulletSpeed: 6,
             color: '#4ecca3',
             description: '伤害输出+持续中毒伤害'
         },
         SPACE: {
-            damage: 4,
-            attackSpeed: 1800,
+            damage: 10,
+            attackSpeed: 1500,
             range: 350,
             lineWidth: 8,
-            lineDuration: 3000,
+            lineDuration: 4000,
+            lineWidthMultiplier: 0.25,
             bulletSpeed: 10,
             color: '#a66cff',
             description: '生成阻拦横线+持续伤害'
         },
         SHOTGUN: {
-            damage: 2,
-            attackSpeed: 900,
+            damage: 6,
+            attackSpeed: 800,
             range: 220,
-            bulletCount: 5,
-            spreadAngle: 45,
+            bulletCount: 6,
+            spreadAngle: 50,
             bulletSpeed: 9,
             color: '#f9ed69',
             description: '多方向散射攻击效果'
         }
     },
     
-    // 武器升级积分阈值（数值平衡）
+    // 武器升级积分阈值（数值平衡）- 每100积分一次升级
     WEAPON_LEVEL_THRESHOLDS: {
-        1: 50,
-        2: 150,
+        1: 100,
+        2: 200,
         3: 300,
-        4: 500,
-        5: 800
+        4: 400,
+        5: 500
     },
     
     // 武器升级加成比例
     WEAPON_UPGRADE_BONUS: {
-        damage: 0.15,
-        attackSpeed: 0.10,
-        range: 0.10
+        damage: 0.25,
+        attackSpeed: 0.15,
+        range: 0.12
     },
     
     // 敌人属性（数值平衡）
     ENEMY: {
-        baseHP: 40,
-        baseSpeed: 0.625,
+        baseHP: 25,
+        baseSpeed: 0.2,
         baseSpawnInterval: 3000,
         minSpawnInterval: 1000,
         size: 28,
@@ -176,13 +177,21 @@ const CONSTANTS = {
         scorePerHP: 0.5
     },
     
+    // 敌人生成配置
+    ENEMY_SPAWN: {
+        baseCount: 1,
+        extraCountPer30Seconds: 2,
+        waveIntervalMinutes: 3,
+        waveBaseCount: 15,
+        waveIncrementCount: 8
+    },
+    
     // 敌人难度曲线
     ENEMY_DIFFICULTY: {
-        hpIncreasePerMinute: 8,
-        speedIncreasePerMinute: 0.02,
-        spawnRateIncreasePerMinute: 100,
-        maxHpMultiplier: 5,
-        maxSpeedMultiplier: 2
+        hpIncreasePer30Seconds: 6,
+        speedIncreasePerMinute: 0.015,
+        maxHpMultiplier: 6,
+        maxSpeedMultiplier: 1.8
     },
     
     // 敌人类型
