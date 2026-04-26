@@ -118,15 +118,16 @@ const CONSTANTS = {
             description: '伤害输出+短暂冰冻减速'
         },
         POISON: {
-            damage: 8,
+            damage: 2,
             attackSpeed: 1000,
-            range: 280,
-            poisonDamage: 4,
+            range: 600,
+            aoeRadius: 50,
+            poisonDamage: 2,
             poisonDuration: 6000,
             poisonTickRate: 500,
             bulletSpeed: 6,
             color: '#4ecca3',
-            description: '伤害输出+持续中毒伤害'
+            description: '范围伤害+持续中毒伤害'
         },
         SPACE: {
             damage: 10,
@@ -135,6 +136,7 @@ const CONSTANTS = {
             lineWidth: 8,
             lineDuration: 4000,
             lineWidthMultiplier: 0.25,
+            blockCount: 3,
             bulletSpeed: 10,
             color: '#a66cff',
             description: '生成阻拦横线+持续伤害'
@@ -191,16 +193,15 @@ const CONSTANTS = {
     ENEMY_DIFFICULTY: {
         hpIncreasePer30Seconds: 6,
         speedIncreasePerMinute: 0.015,
-        maxHpMultiplier: 6,
         maxSpeedMultiplier: 1.8
     },
     
     // 敌人类型
     ENEMY_TYPES: {
-        NORMAL: { hpMultiplier: 1.0, speedMultiplier: 1.0, color: '#ff4757', name: '普通敌人' },
-        FAST: { hpMultiplier: 0.6, speedMultiplier: 1.8, color: '#ffa502', name: '快速敌人' },
-        TANK: { hpMultiplier: 2.5, speedMultiplier: 0.6, color: '#2f3542', name: '重装敌人' },
-        ELITE: { hpMultiplier: 3.0, speedMultiplier: 0.8, color: '#8b00ff', name: '精英敌人' }
+        NORMAL: { hpMultiplier: 1.0, speedMultiplier: 1.0, damageToWall: 10, color: '#ff4757', name: '普通敌人' },
+        FAST: { hpMultiplier: 0.6, speedMultiplier: 1.8, damageToWall: 5, color: '#ffa502', name: '快速敌人' },
+        TANK: { hpMultiplier: 2.5, speedMultiplier: 0.6, damageToWall: 25, color: '#2f3542', name: '重装敌人' },
+        ELITE: { hpMultiplier: 3.0, speedMultiplier: 0.8, damageToWall: 20, color: '#8b00ff', name: '精英敌人' }
     },
     
     // 城墙属性

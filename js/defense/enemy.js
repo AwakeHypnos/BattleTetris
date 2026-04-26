@@ -16,6 +16,7 @@ class Enemy {
         this.speed = this.baseSpeed;
         this.color = typeConfig.color;
         this.size = CONSTANTS.ENEMY.size;
+        this.damageToWall = typeConfig.damageToWall || CONSTANTS.WALL.damagePerEnemy;
         
         this.isFrozen = false;
         this.frozenUntil = 0;
@@ -32,7 +33,7 @@ class Enemy {
         this.isTank = type === 'TANK';
     }
     
-    update(currentTime) {
+    update(currentTime, speedMultiplier = 1.0) {
         if (this.isFrozen && currentTime >= this.frozenUntil) {
             this.isFrozen = false;
         }
@@ -52,7 +53,7 @@ class Enemy {
         }
         
         if (!this.isFrozen) {
-            this.y += this.speed;
+            this.y += this.speed * speedMultiplier;
         }
     }
     
