@@ -72,6 +72,7 @@ class BattleTetrisGame {
             upgradeMenu: document.getElementById('weaponUpgradeOverlay'),
             gameOverMenu: document.getElementById('gameOverOverlay'),
             howToPlayMenu: document.getElementById('howToPlayOverlay'),
+            speedBoostMenu: document.getElementById('speedBoostOverlay'),
             
             tetrisScore: document.getElementById('tetrisScore'),
             defenseScore: document.getElementById('defenseScore'),
@@ -128,6 +129,10 @@ class BattleTetrisGame {
         document.getElementById('returnToMenuBtn').addEventListener('click', () => this.returnToMainMenu());
         
         document.getElementById('closeHowToPlay').addEventListener('click', () => this.hideHowToPlay());
+        
+        document.getElementById('speed1_5x').addEventListener('click', () => this.setSpeedBoost(1.5));
+        document.getElementById('speed2x').addEventListener('click', () => this.setSpeedBoost(2.0));
+        document.getElementById('speedNoBoost').addEventListener('click', () => this.setSpeedBoost(1.0));
         
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
     }
@@ -292,6 +297,24 @@ class BattleTetrisGame {
         this.tetrisEnded = true;
         this.currentPiece = null;
         this.stopDropTimer();
+        
+        this.showSpeedBoostMenu();
+    }
+    
+    showSpeedBoostMenu() {
+        this.isPaused = true;
+        this.ui.speedBoostMenu.classList.remove('hidden');
+    }
+    
+    hideSpeedBoostMenu() {
+        this.ui.speedBoostMenu.classList.add('hidden');
+    }
+    
+    setSpeedBoost(multiplier) {
+        this.defenseSystem.speedMultiplier = multiplier;
+        this.hideSpeedBoostMenu();
+        this.isPaused = false;
+        this.animationId = requestAnimationFrame((t) => this.gameLoop(t));
     }
     
     spawnNewPiece() {
@@ -483,25 +506,13 @@ class BattleTetrisGame {
     }
     
     calculateTotalScore() {
-        const tetrisWeight = CONSTANTS.SCORING.TETRIS_WEIGHT;
-        const defenseWeight = CONSTANTS.SCORING.DEFENSE_WEIGHT;
-        
-        const wallHPBonus = Math.floor(
-            Math.max(0, this.defenseSystem.wallHP) * CONSTANTS.SCORING.WALL_HP_BONUS / CONSTANTS.WALL.maxHP
-        );
-        
-        const survivalBonus = Math.floor(this.survivalTime * CONSTANTS.SCORING.SURVIVAL_TIME_BONUS);
-        
-        const killBonus = this.defenseSystem.killCount * CONSTANTS.SCORING.KILL_BONUS;
-        
-        const comboBonus = this.maxCombo * CONSTANTS.SCORING.COMBO_BONUS;
-        
-        const levelBonus = this.level * CONSTANTS.SCORING.LEVEL_BONUS;
-        
-        const adjustedDefenseScore = this.defenseSystem.defenseScore + wallHPBonus + survivalBonus + killBonus + comboBonus + levelBonus;
+        const gameMinutes = Math.max(1, Math.floor(this.survivalTime / 60));
+        const wallHPBonus = Math.max(0, this.defenseSystem.wallHP) * CONSTANTS.SCORING.WALL_HP_BONUS;
         
         this.totalScore = Math.floor(
-            this.tetrisScore * tetrisWeight + adjustedDefenseScore * defenseWeight
+            this.defenseSystem.defenseScore +
+            this.tetrisScore * gameMinutes +
+            wallHPBonus
         );
         
         return this.totalScore;

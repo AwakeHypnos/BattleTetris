@@ -27,7 +27,7 @@ class Bullet {
         this.pierceCount = weaponConfig.pierceCount || 1;
         this.hitEnemies = new Set();
         
-        this.isAOE = weaponType === 'FIRE';
+        this.isAOE = weaponType === 'FIRE' || weaponType === 'POISON';
         this.aoeRadius = weaponConfig.aoeRadius || 0;
         
         this.hasFreezeEffect = weaponType === 'ICE';
@@ -41,11 +41,12 @@ class Bullet {
         this.createsSpaceLine = weaponType === 'SPACE';
         this.lineWidth = weaponConfig.lineWidth;
         this.lineDuration = weaponConfig.lineDuration;
+        this.blockCount = weaponConfig.blockCount || 3;
     }
     
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
+    update(speedMultiplier = 1.0) {
+        this.x += this.vx * speedMultiplier;
+        this.y += this.vy * speedMultiplier;
         
         if (this.x < -50 || this.x > CONSTANTS.DEFENSE.CANVAS_WIDTH + 50 ||
             this.y < -50 || this.y > CONSTANTS.DEFENSE.CANVAS_HEIGHT + 50) {

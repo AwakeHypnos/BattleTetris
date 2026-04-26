@@ -53,6 +53,8 @@ class DefenseSystem {
         this.pendingUpgrade = null;
         this.isUpgradePending = false;
         
+        this.speedMultiplier = 1.0;
+        
         this.initTurrets();
     }
     
@@ -133,6 +135,8 @@ class DefenseSystem {
         
         this.pendingUpgrade = null;
         this.isUpgradePending = false;
+        
+        this.speedMultiplier = 1.0;
         
         this.initTurrets();
     }
@@ -226,12 +230,9 @@ class DefenseSystem {
         const elapsedMinutes = elapsedSeconds / 60;
         
         const periodsOf30Seconds = Math.floor(elapsedSeconds / 30);
-        this.difficultyMultiplier = Math.min(
-            CONSTANTS.ENEMY_DIFFICULTY.maxHpMultiplier,
-            1 + periodsOf30Seconds * (CONSTANTS.ENEMY_DIFFICULTY.hpIncreasePer30Seconds / 100)
-        );
+        this.difficultyMultiplier = 1 + periodsOf30Seconds * (CONSTANTS.ENEMY_DIFFICULTY.hpIncreasePer30Seconds / 100);
         
-        this.spawnInterval = CONSTANTS.ENEMY.baseSpawnInterval;
+        const effectiveSpawnInterval = CONSTANTS.ENEMY.baseSpawnInterval / this.speedMultiplier;
         
         if (this.lastWaveTime === undefined) {
             this.lastWaveTime = 0;
@@ -246,20 +247,21 @@ class DefenseSystem {
             this.lastWaveTime = elapsedMinutes;
         }
         
-        if (currentTime - this.lastSpawnTime >= this.spawnInterval) {
+        if (currentTime - this.lastSpawnTime >= effectiveSpawnInterval) {
             const extraCount = Math.floor(elapsedSeconds / 30) * CONSTANTS.ENEMY_SPAWN.extraCountPer30Seconds;
-            const totalCount = CONSTANTS.ENEMY_SPAWN.baseCount + extraCount;
+            const baseCount = CONSTANTS.ENEMY_SPAWN.baseCount + extraCount;
+            const totalCount = Math.ceil(baseCount * this.speedMultiplier);
             
             this.spawnEnemy(totalCount);
             this.lastSpawnTime = currentTime;
         }
         
-        this.enemies.forEach(enemy => enemy.update(currentTime));
+        this.enemies.forEach(enemy => enemy.update(currentTime, this.speedMultiplier));
         
         const wallY = this.canvas.height - CONSTANTS.DEFENSE.WALL_HEIGHT;
         this.enemies = this.enemies.filter(enemy => {
             if (enemy.y >= wallY) {
-                this.wallHP -= CONSTANTS.WALL.damagePerEnemy;
+                this.wallHP -= enemy.damageToWall;
                 return false;
             }
             if (enemy.currentHP <= 0) {
@@ -272,11 +274,54 @@ class DefenseSystem {
         });
         
         this.turrets.forEach(turret => {
-            const newBullets = turret.attack(currentTime, this.enemies, this.bullets, this.spaceLines);
-            this.bullets.push(...newBullets);
+            const effectiveAttackSpeed = turret.getEffectiveAttackSpeed() / this.speedMultiplier;
+            if (currentTime - turret.lastAttackTime >= effectiveAttackSpeed) {
+                const target = turret.findTarget(this.enemies);
+                if (target) {
+                    turret.lastAttackTime = currentTime;
+                    turret.target = target;
+                    const targetAngle = Math.atan2(target.y - turret.y, target.x - turret.x);
+                    turret.angle = targetAngle;
+                    
+                    let newBullets = [];
+                    
+                    if (turret.weaponType === 'SHOTGUN') {
+                        const bulletCount = Math.floor(turret.config.bulletCount * turret.bonuses.bulletCountBonus);
+                        const spreadRad = (turret.config.spreadAngle * Math.PI) / 180;
+                        
+                        for (let i = 0; i < bulletCount; i++) {
+                            const offset = (i - (bulletCount - 1) / 2);
+                            const bulletAngle = targetAngle + offset * (spreadRad / (bulletCount - 1));
+                            
+                            const bulletTargetX = turret.x + Math.cos(bulletAngle) * 500;
+                            const bulletTargetY = turret.y + Math.sin(bulletAngle) * 500;
+                            
+                            const bullet = new Bullet(
+                                turret.x, turret.y,
+                                bulletTargetX, bulletTargetY,
+                                turret.weaponType,
+                                turret.getEffectiveDamage(),
+                                turret.bonuses
+                            );
+                            newBullets.push(bullet);
+                        }
+                    } else {
+                        const bullet = new Bullet(
+                            turret.x, turret.y,
+                            target.x, target.y,
+                            turret.weaponType,
+                            turret.getEffectiveDamage(),
+                            turret.bonuses
+                        );
+                        newBullets.push(bullet);
+                    }
+                    
+                    this.bullets.push(...newBullets);
+                }
+            }
         });
         
-        this.bullets.forEach(bullet => bullet.update());
+        this.bullets.forEach(bullet => bullet.update(this.speedMultiplier));
         
         this.bullets.forEach(bullet => {
             if (!bullet.isActive) return;
@@ -300,6 +345,9 @@ class DefenseSystem {
                                 const dist = Math.sqrt(dx * dx + dy * dy);
                                 if (dist <= bullet.aoeRadius) {
                                     otherEnemy.takeDamage(bullet.damage * 0.5);
+                                    if (bullet.hasPoisonEffect) {
+                                        otherEnemy.applyPoison(bullet.poisonDamage, bullet.poisonDuration);
+                                    }
                                 }
                             }
                         });
@@ -314,7 +362,8 @@ class DefenseSystem {
                             lineWidth,
                             bullet.lineDuration,
                             bullet.damage * 0.3,
-                            lineStartX
+                            lineStartX,
+                            bullet.blockCount
                         );
                         this.spaceLines.push(spaceLine);
                     }

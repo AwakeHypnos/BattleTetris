@@ -6,20 +6,28 @@
 // 空间线类（紫色武器效果）
 // ============================================
 class SpaceLine {
-    constructor(y, width, duration, damage, startX = 0) {
+    constructor(y, width, duration, damage, startX = 0, blockCount = 3) {
         this.y = y;
         this.width = width;
         this.duration = duration;
         this.damage = damage;
         this.startX = startX;
+        this.blockCount = blockCount;
+        this.maxBlockCount = blockCount;
         this.createdAt = performance.now();
         this.isActive = true;
         this.lastDamageTick = performance.now();
         this.damageTickRate = 500;
+        this.blockedEnemies = new Set();
     }
     
     update(currentTime, enemies) {
         if (currentTime - this.createdAt >= this.duration) {
+            this.isActive = false;
+            return;
+        }
+        
+        if (this.blockCount <= 0) {
             this.isActive = false;
             return;
         }
@@ -30,6 +38,11 @@ class SpaceLine {
         enemies.forEach(enemy => {
             if (Math.abs(enemy.y - this.y) < 20 && 
                 enemy.x >= lineStartX && enemy.x <= lineEndX) {
+                if (!this.blockedEnemies.has(enemy)) {
+                    this.blockedEnemies.add(enemy);
+                    this.blockCount--;
+                }
+                
                 if (!enemy.isFrozen) {
                     enemy.applyFreeze(this.damageTickRate * 2, 0.9);
                 }
