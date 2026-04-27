@@ -102,7 +102,7 @@ const CONSTANTS = {
             damage: 5,
             attackSpeed: 1200,
             range: 500,
-            pierceCount: 5,
+            pierceCount: 2,
             bulletSpeed: 12,
             color: '#ff8c00',
             description: '穿透多个敌人的直线伤害'
@@ -153,7 +153,17 @@ const CONSTANTS = {
         }
     },
     
-    // 武器升级积分阈值（数值平衡）- 每100积分一次升级
+    // 新升级系统 - 每50分触发一次升级选择
+    UPGRADE_SYSTEM: {
+        SCORE_THRESHOLD: 50,
+        MAX_GENERAL_DAMAGE_BONUS: 0.80,
+        MAX_GENERAL_ATTACK_SPEED_BONUS: 0.80,
+        MAX_SCORE_BONUS: 1.0,
+        MAX_DURATION_BONUS: 1.0,
+        MAX_ARMOR_REDUCTION: 20
+    },
+    
+    // 武器升级积分阈值（保留旧系统用于解锁新武器）
     WEAPON_LEVEL_THRESHOLDS: {
         1: 100,
         2: 200,
@@ -189,11 +199,14 @@ const CONSTANTS = {
         waveIncrementCount: 8
     },
     
-    // 敌人难度曲线
+    // 敌人难度曲线 - 1分钟后加快增长，无上限
     ENEMY_DIFFICULTY: {
-        hpIncreasePer30Seconds: 6,
-        speedIncreasePerMinute: 0.015,
-        maxSpeedMultiplier: 1.8
+        baseHpIncreasePer30Seconds: 6,
+        acceleratedHpIncreasePer30Seconds: 15,
+        baseSpeedIncreasePerMinute: 0.015,
+        acceleratedSpeedIncreasePerMinute: 0.04,
+        accelerationStartTime: 60,
+        maxSpeedMultiplier: null
     },
     
     // 敌人类型

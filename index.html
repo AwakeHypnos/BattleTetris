@@ -78,17 +78,27 @@
         </div>
     </div>
     
-    <!-- 武器升级选择界面 -->
+    <!-- 武器升级选择界面 - 旧版（用于武器解锁） -->
     <div id="weaponUpgradeOverlay" class="overlay hidden">
         <div class="weapon-upgrade-menu">
-            <h2>武器升级可用！</h2>
+            <h2>新武器解锁！</h2>
             <div class="weapon-info-display">
                 <div class="weapon-preview" id="upgradeWeaponPreview"></div>
                 <div class="weapon-details" id="upgradeWeaponDetails"></div>
             </div>
             <div class="upgrade-options">
-                <button class="upgrade-btn" id="confirmUpgrade">确认升级</button>
-                <button class="upgrade-btn secondary" id="deferUpgrade">稍后升级</button>
+                <button class="upgrade-btn" id="confirmUpgrade">解锁武器</button>
+                <button class="upgrade-btn secondary" id="deferUpgrade">稍后解锁</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 新三选一升级选择界面 -->
+    <div id="buffUpgradeOverlay" class="overlay hidden">
+        <div class="buff-upgrade-menu">
+            <h2>选择升级效果</h2>
+            <p class="upgrade-subtitle">每50分解锁一次升级，选择一项永久加成</p>
+            <div class="buff-options-container" id="buffOptionsContainer">
             </div>
         </div>
     </div>
@@ -213,6 +223,7 @@
     <script src="js/defense/bullet.js"></script>
     <script src="js/defense/effects.js"></script>
     <script src="js/defense/turret.js"></script>
+    <script src="js/defense/upgradeSystem.js"></script>
     <script src="js/defense/index.js"></script>
     
     <script src="js/tetris/index.js"></script>
