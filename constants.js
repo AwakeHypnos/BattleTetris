@@ -42,7 +42,7 @@ const CONSTANTS = {
     LEVEL: {
         SCORE_PER_LEVEL: 100,
         BASE_LINES_PER_LEVEL: 10,
-        SPEED_INCREASE: 0.85
+        SPEED_INCREASE: 0.95
     },
     
     // 初始下落速度（毫秒）
@@ -90,7 +90,7 @@ const CONSTANTS = {
     // 武器基础属性（数值平衡）
     WEAPONS: {
         FIRE: {
-            damage: 12,
+            damage: 6,
             attackSpeed: 1000,
             range: 250,
             aoeRadius: 60,
@@ -99,7 +99,7 @@ const CONSTANTS = {
             description: '小范围AOE伤害'
         },
         PIERCE: {
-            damage: 16,
+            damage: 5,
             attackSpeed: 1200,
             range: 500,
             pierceCount: 5,
@@ -108,7 +108,7 @@ const CONSTANTS = {
             description: '穿透多个敌人的直线伤害'
         },
         ICE: {
-            damage: 10,
+            damage: 7,
             attackSpeed: 900,
             range: 250,
             freezeDuration: 2500,
@@ -119,22 +119,22 @@ const CONSTANTS = {
         },
         POISON: {
             damage: 2,
-            attackSpeed: 1000,
+            attackSpeed: 1500,
             range: 600,
             aoeRadius: 50,
             poisonDamage: 2,
             poisonDuration: 6000,
-            poisonTickRate: 500,
+            poisonTickRate: 1000,
             bulletSpeed: 6,
             color: '#4ecca3',
             description: '范围伤害+持续中毒伤害'
         },
         SPACE: {
-            damage: 10,
+            damage: 7,
             attackSpeed: 1500,
             range: 350,
             lineWidth: 8,
-            lineDuration: 4000,
+            lineDuration: 2000,
             lineWidthMultiplier: 0.25,
             blockCount: 3,
             bulletSpeed: 10,

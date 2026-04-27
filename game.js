@@ -274,6 +274,8 @@ class BattleTetrisGame {
             }
         });
         
+        this.currentPiece = null;
+        
         this.applyGravity();
         
         const hasCleared = this.checkAndClear();
@@ -283,6 +285,7 @@ class BattleTetrisGame {
             if (this.combo > this.maxCombo) {
                 this.maxCombo = this.combo;
             }
+            this.stopDropTimer();
         } else {
             this.combo = 0;
             this.spawnNewPiece();
@@ -436,6 +439,7 @@ class BattleTetrisGame {
             
             if (!hasMoreClears) {
                 this.spawnNewPiece();
+                this.startDropTimer();
             }
         }, 100);
     }

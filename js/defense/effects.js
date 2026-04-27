@@ -38,21 +38,20 @@ class SpaceLine {
         enemies.forEach(enemy => {
             if (Math.abs(enemy.y - this.y) < 20 && 
                 enemy.x >= lineStartX && enemy.x <= lineEndX) {
-                if (!this.blockedEnemies.has(enemy)) {
+                if (this.blockCount > 0 && !this.blockedEnemies.has(enemy)) {
                     this.blockedEnemies.add(enemy);
                     this.blockCount--;
-                }
-                
-                if (!enemy.isFrozen) {
-                    enemy.applyFreeze(this.damageTickRate * 2, 0.9);
+                    
+                    if (!enemy.isFrozen) {
+                        enemy.applyFreeze(this.damageTickRate * 2, 0.9);
+                    }
                 }
             }
         });
         
         if (currentTime - this.lastDamageTick >= this.damageTickRate) {
-            enemies.forEach(enemy => {
-                if (Math.abs(enemy.y - this.y) < 20 && 
-                    enemy.x >= lineStartX && enemy.x <= lineEndX) {
+            this.blockedEnemies.forEach(enemy => {
+                if (enemy.currentHP > 0) {
                     enemy.takeDamage(this.damage);
                 }
             });
