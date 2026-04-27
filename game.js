@@ -70,6 +70,7 @@ class BattleTetrisGame {
             mainMenu: document.getElementById('mainMenuOverlay'),
             pauseMenu: document.getElementById('pauseOverlay'),
             upgradeMenu: document.getElementById('weaponUpgradeOverlay'),
+            buffUpgradeMenu: document.getElementById('buffUpgradeOverlay'),
             gameOverMenu: document.getElementById('gameOverOverlay'),
             howToPlayMenu: document.getElementById('howToPlayOverlay'),
             speedBoostMenu: document.getElementById('speedBoostOverlay'),
@@ -418,12 +419,21 @@ class BattleTetrisGame {
     clearBlocks(toClear, clearedColors) {
         this.updateTetrisScore(toClear.size);
         
+        const scoreMultiplier = this.defenseSystem.upgradeSystem.getScoreMultiplier();
+        
         clearedColors.forEach((count, color) => {
-            const points = count * (5 + this.combo * 2);
-            const upgrade = this.defenseSystem.addWeaponPoints(color, points);
+            const basePoints = count * (5 + this.combo * 2);
+            const adjustedPoints = Math.floor(basePoints * scoreMultiplier);
             
-            if (upgrade && !this.isInUpgradeMenu) {
-                this.showUpgradeMenu(upgrade);
+            const weaponUnlock = this.defenseSystem.addWeaponPoints(color, basePoints);
+            
+            if (weaponUnlock && !this.isInUpgradeMenu) {
+                this.showUpgradeMenu(weaponUnlock);
+            }
+            
+            const buffUpgrade = this.defenseSystem.addScoreForUpgrade(basePoints);
+            if (buffUpgrade && !this.isInUpgradeMenu && !this.defenseSystem.isWeaponUnlockPending) {
+                this.showBuffUpgradeMenu(buffUpgrade);
             }
         });
         
@@ -866,10 +876,58 @@ class BattleTetrisGame {
     
     deferWeaponUpgrade() {
         this.defenseSystem.deferUpgrade();
+        this.defenseSystem.deferWeaponUnlock();
         this.ui.upgradeMenu.classList.add('hidden');
         this.isInUpgradeMenu = false;
         this.isPaused = false;
         this.startDropTimer();
+        this.animationId = requestAnimationFrame((t) => this.gameLoop(t));
+    }
+    
+    showBuffUpgradeMenu(upgrade) {
+        this.isInUpgradeMenu = true;
+        this.isPaused = true;
+        this.stopDropTimer();
+        
+        const container = document.getElementById('buffOptionsContainer');
+        container.innerHTML = '';
+        
+        const options = upgrade.options;
+        
+        options.forEach((option, index) => {
+            const card = document.createElement('div');
+            card.className = 'buff-option-card';
+            card.style.borderColor = option.color;
+            card.style.boxShadow = `0 0 20px ${option.color}40`;
+            
+            const categoryLabel = option.category === 'general' ? '通用' : 
+                (option.weaponType ? CONSTANTS.WEAPON_NAMES[option.weaponType] || '专属' : '专属');
+            const categoryColor = option.category === 'general' ? '#aaa' : option.color;
+            
+            card.innerHTML = `
+                <div class="buff-category" style="color: ${categoryColor}">${categoryLabel}</div>
+                <div class="buff-name" style="color: ${option.color}">${option.name}</div>
+                <div class="buff-description">${option.description}</div>
+            `;
+            
+            card.addEventListener('click', () => this.selectBuffUpgrade(index));
+            
+            container.appendChild(card);
+        });
+        
+        this.ui.buffUpgradeMenu.classList.remove('hidden');
+    }
+    
+    selectBuffUpgrade(optionIndex) {
+        this.defenseSystem.selectUpgrade(optionIndex);
+        
+        this.ui.buffUpgradeMenu.classList.add('hidden');
+        this.isInUpgradeMenu = false;
+        this.isPaused = false;
+        
+        if (!this.tetrisEnded) {
+            this.startDropTimer();
+        }
         this.animationId = requestAnimationFrame((t) => this.gameLoop(t));
     }
     
