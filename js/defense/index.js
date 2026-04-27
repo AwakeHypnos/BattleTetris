@@ -42,8 +42,17 @@ class DefenseSystem {
             SHOTGUN: 0
         };
         
+        this.weaponUnlockStates = {
+            FIRE: true,
+            PIERCE: false,
+            ICE: false,
+            POISON: false,
+            SPACE: false,
+            SHOTGUN: false
+        };
+        
         this.weaponLevels = {
-            FIRE: 0,
+            FIRE: 1,
             PIERCE: 0,
             ICE: 0,
             POISON: 0,
@@ -53,14 +62,10 @@ class DefenseSystem {
         
         this.upgradeSystem = new UpgradeSystem();
         
-        this.totalScoreForUpgrade = 0;
-        this.lastUpgradeThreshold = 0;
-        
         this.pendingUpgrade = null;
         this.isUpgradePending = false;
         
-        this.pendingWeaponUnlock = null;
-        this.isWeaponUnlockPending = false;
+        this.pendingUpgradeWeaponType = null;
         
         this.initTurrets();
     }
@@ -108,8 +113,6 @@ class DefenseSystem {
     start() {
         this.gameStartTime = performance.now();
         this.lastSpawnTime = performance.now();
-        this.totalScoreForUpgrade = 0;
-        this.lastUpgradeThreshold = 0;
     }
     
     reset() {
@@ -125,9 +128,6 @@ class DefenseSystem {
         this.lastSpawnTime = performance.now();
         this.gameStartTime = performance.now();
         
-        this.totalScoreForUpgrade = 0;
-        this.lastUpgradeThreshold = 0;
-        
         this.weaponPoints = {
             FIRE: 0,
             PIERCE: 0,
@@ -137,8 +137,17 @@ class DefenseSystem {
             SHOTGUN: 0
         };
         
+        this.weaponUnlockStates = {
+            FIRE: true,
+            PIERCE: false,
+            ICE: false,
+            POISON: false,
+            SPACE: false,
+            SHOTGUN: false
+        };
+        
         this.weaponLevels = {
-            FIRE: 0,
+            FIRE: 1,
             PIERCE: 0,
             ICE: 0,
             POISON: 0,
@@ -150,8 +159,7 @@ class DefenseSystem {
         
         this.pendingUpgrade = null;
         this.isUpgradePending = false;
-        this.pendingWeaponUnlock = null;
-        this.isWeaponUnlockPending = false;
+        this.pendingUpgradeWeaponType = null;
         
         this.initTurrets();
     }
@@ -159,34 +167,6 @@ class DefenseSystem {
     setBonuses(bonuses) {
         this.bonuses = { ...this.bonuses, ...bonuses };
         this.turrets.forEach(turret => turret.setBonuses(this.bonuses));
-    }
-    
-    addScoreForUpgrade(score) {
-        const scoreMultiplier = this.upgradeSystem.getScoreMultiplier();
-        const adjustedScore = Math.floor(score * scoreMultiplier);
-        
-        this.totalScoreForUpgrade += adjustedScore;
-        
-        const threshold = CONSTANTS.UPGRADE_SYSTEM.SCORE_THRESHOLD;
-        const nextThreshold = this.lastUpgradeThreshold + threshold;
-        
-        if (this.totalScoreForUpgrade >= nextThreshold && !this.isUpgradePending) {
-            this.lastUpgradeThreshold = nextThreshold;
-            
-            const activeWeaponTypes = this.getActiveWeaponTypes();
-            const upgradeOptions = this.upgradeSystem.generateUpgradeOptions(activeWeaponTypes);
-            
-            if (upgradeOptions.length > 0) {
-                this.pendingUpgrade = {
-                    options: upgradeOptions,
-                    threshold: nextThreshold
-                };
-                this.isUpgradePending = true;
-                return this.pendingUpgrade;
-            }
-        }
-        
-        return null;
     }
     
     getActiveWeaponTypes() {
@@ -199,32 +179,29 @@ class DefenseSystem {
         const weaponType = CONSTANTS.WEAPON_COLOR_MAP[color];
         if (!weaponType) return null;
         
-        this.weaponPoints[weaponType] += points;
+        const scoreMultiplier = this.upgradeSystem.getScoreMultiplier();
+        const adjustedPoints = Math.floor(points * scoreMultiplier);
         
-        const currentLevel = this.weaponLevels[weaponType];
-        const nextLevel = currentLevel + 1;
-        const threshold = CONSTANTS.WEAPON_LEVEL_THRESHOLDS[nextLevel];
+        this.weaponPoints[weaponType] += adjustedPoints;
         
-        if (threshold && this.weaponPoints[weaponType] >= threshold && !this.isWeaponUnlockPending) {
-            if (nextLevel === 1 && weaponType !== 'FIRE') {
-                const existingTurret = this.turrets.find(t => t.weaponType === weaponType);
-                if (!existingTurret) {
-                    this.pendingWeaponUnlock = {
-                        weaponType: weaponType,
-                        newLevel: nextLevel,
-                        points: this.weaponPoints[weaponType]
-                    };
-                    this.isWeaponUnlockPending = true;
-                    return this.pendingWeaponUnlock;
-                }
-            }
+        const threshold = CONSTANTS.UPGRADE_SYSTEM.SCORE_THRESHOLD;
+        
+        if (this.weaponPoints[weaponType] >= threshold && !this.isUpgradePending) {
+            this.weaponPoints[weaponType] -= threshold;
             
-            this.weaponLevels[weaponType] = nextLevel;
-            const turret = this.turrets.find(t => t.weaponType === weaponType);
-            if (turret) {
-                turret.upgrade();
+            const activeWeaponTypes = this.getActiveWeaponTypes();
+            const upgradeOptions = this.upgradeSystem.generateUpgradeOptions(activeWeaponTypes);
+            
+            if (upgradeOptions.length > 0) {
+                this.pendingUpgrade = {
+                    options: upgradeOptions,
+                    triggerWeaponType: weaponType,
+                    needsUnlock: !this.weaponUnlockStates[weaponType]
+                };
+                this.pendingUpgradeWeaponType = weaponType;
+                this.isUpgradePending = true;
+                return this.pendingUpgrade;
             }
-            this.weaponPoints[weaponType] = 0;
         }
         
         return null;
@@ -236,40 +213,44 @@ class DefenseSystem {
         const selectedOption = this.pendingUpgrade.options[optionIndex];
         if (!selectedOption) return false;
         
+        const triggerWeaponType = this.pendingUpgrade.triggerWeaponType;
+        const needsUnlock = this.pendingUpgrade.needsUnlock;
+        
+        if (needsUnlock && triggerWeaponType && triggerWeaponType !== 'FIRE') {
+            const existingTurret = this.turrets.find(t => t.weaponType === triggerWeaponType);
+            if (!existingTurret) {
+                this.addTurretForWeapon(triggerWeaponType);
+                this.weaponUnlockStates[triggerWeaponType] = true;
+            }
+        }
+        
         this.upgradeSystem.selectUpgrade(selectedOption, this.turrets);
         
         this.pendingUpgrade = null;
+        this.pendingUpgradeWeaponType = null;
         this.isUpgradePending = false;
         
         return true;
     }
     
     confirmWeaponUnlock() {
-        if (!this.pendingWeaponUnlock) return false;
-        
-        const { weaponType, newLevel } = this.pendingWeaponUnlock;
-        
-        this.addTurretForWeapon(weaponType);
-        this.weaponLevels[weaponType] = newLevel;
-        this.weaponPoints[weaponType] = 0;
-        
-        this.pendingWeaponUnlock = null;
-        this.isWeaponUnlockPending = false;
-        
-        return true;
+        return false;
     }
     
     confirmUpgrade() {
-        return this.confirmWeaponUnlock();
+        return false;
     }
     
     deferUpgrade() {
         this.isUpgradePending = false;
-        this.isWeaponUnlockPending = false;
+        this.pendingUpgrade = null;
+        this.pendingUpgradeWeaponType = null;
     }
     
     deferWeaponUnlock() {
-        this.isWeaponUnlockPending = false;
+        this.isUpgradePending = false;
+        this.pendingUpgrade = null;
+        this.pendingUpgradeWeaponType = null;
     }
     
     calculateDifficulty(elapsedSeconds) {
@@ -802,13 +783,11 @@ class DefenseSystem {
                 specialBonuses: t.specialBonuses
             })),
             weaponPoints: { ...this.weaponPoints },
-            weaponLevels: { ...this.weaponLevels },
+            weaponUnlockStates: { ...this.weaponUnlockStates },
             wallHP: this.wallHP,
             killCount: this.killCount,
             defenseScore: this.defenseScore,
             difficultyMultiplier: this.difficultyMultiplier,
-            totalScoreForUpgrade: this.totalScoreForUpgrade,
-            lastUpgradeThreshold: this.lastUpgradeThreshold,
             upgradeSystemState: this.upgradeSystem.getState()
         };
     }
@@ -820,10 +799,17 @@ class DefenseSystem {
         this.killCount = state.killCount || 0;
         this.defenseScore = state.defenseScore || 0;
         this.difficultyMultiplier = state.difficultyMultiplier || 1;
-        this.totalScoreForUpgrade = state.totalScoreForUpgrade || 0;
-        this.lastUpgradeThreshold = state.lastUpgradeThreshold || 0;
         this.weaponPoints = { ...(state.weaponPoints || this.weaponPoints) };
-        this.weaponLevels = { ...(state.weaponLevels || this.weaponLevels) };
+        
+        if (state.weaponUnlockStates) {
+            this.weaponUnlockStates = { ...state.weaponUnlockStates };
+        } else if (state.weaponLevels) {
+            Object.keys(state.weaponLevels).forEach(type => {
+                if (state.weaponLevels[type] >= 1) {
+                    this.weaponUnlockStates[type] = true;
+                }
+            });
+        }
         
         this.upgradeSystem.loadState(state.upgradeSystemState);
         

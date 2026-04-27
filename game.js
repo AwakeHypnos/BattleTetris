@@ -419,21 +419,13 @@ class BattleTetrisGame {
     clearBlocks(toClear, clearedColors) {
         this.updateTetrisScore(toClear.size);
         
-        const scoreMultiplier = this.defenseSystem.upgradeSystem.getScoreMultiplier();
-        
         clearedColors.forEach((count, color) => {
             const basePoints = count * (5 + this.combo * 2);
-            const adjustedPoints = Math.floor(basePoints * scoreMultiplier);
             
-            const weaponUnlock = this.defenseSystem.addWeaponPoints(color, basePoints);
+            const upgrade = this.defenseSystem.addWeaponPoints(color, basePoints);
             
-            if (weaponUnlock && !this.isInUpgradeMenu) {
-                this.showUpgradeMenu(weaponUnlock);
-            }
-            
-            const buffUpgrade = this.defenseSystem.addScoreForUpgrade(basePoints);
-            if (buffUpgrade && !this.isInUpgradeMenu && !this.defenseSystem.isWeaponUnlockPending) {
-                this.showBuffUpgradeMenu(buffUpgrade);
+            if (upgrade && !this.isInUpgradeMenu) {
+                this.showBuffUpgradeMenu(upgrade);
             }
         });
         
@@ -584,22 +576,21 @@ class BattleTetrisGame {
     
     updateWeaponProgressUI() {
         const weaponTypes = ['FIRE', 'PIERCE', 'ICE', 'POISON', 'SPACE', 'SHOTGUN'];
+        const threshold = CONSTANTS.UPGRADE_SYSTEM.SCORE_THRESHOLD;
         
         weaponTypes.forEach(type => {
-            const currentLevel = this.defenseSystem.weaponLevels[type];
-            const nextLevel = currentLevel + 1;
-            const nextThreshold = CONSTANTS.WEAPON_LEVEL_THRESHOLDS[nextLevel];
+            const isUnlocked = this.defenseSystem.weaponUnlockStates[type];
             const points = this.defenseSystem.weaponPoints[type];
             
             let progress = 0;
             let displayText = '';
             
-            if (currentLevel >= 5) {
+            if (isUnlocked) {
                 progress = 100;
-                displayText = 'MAX';
-            } else if (nextThreshold) {
-                progress = Math.min(100, (points / nextThreshold) * 100);
-                displayText = `${Math.floor(points)}/${nextThreshold}`;
+                displayText = '已解锁';
+            } else {
+                progress = Math.min(100, (points / threshold) * 100);
+                displayText = `${Math.floor(points)}/${threshold}`;
             }
             
             if (this.ui.weaponProgress[type]) {
@@ -892,6 +883,14 @@ class BattleTetrisGame {
         const container = document.getElementById('buffOptionsContainer');
         container.innerHTML = '';
         
+        const subtitle = document.querySelector('#buffUpgradeOverlay .upgrade-subtitle');
+        if (subtitle && upgrade.needsUnlock && upgrade.triggerWeaponType) {
+            const weaponName = CONSTANTS.WEAPON_NAMES[upgrade.triggerWeaponType];
+            subtitle.innerHTML = `选择升级效果，并获得新炮塔：<span style="color: ${CONSTANTS.WEAPONS[upgrade.triggerWeaponType].color}">${weaponName}</span>`;
+        } else if (subtitle) {
+            subtitle.innerHTML = '每50分解锁一次升级，选择一项永久加成';
+        }
+        
         const options = upgrade.options;
         
         options.forEach((option, index) => {
@@ -924,6 +923,8 @@ class BattleTetrisGame {
         this.ui.buffUpgradeMenu.classList.add('hidden');
         this.isInUpgradeMenu = false;
         this.isPaused = false;
+        
+        this.updateWeaponProgressUI();
         
         if (!this.tetrisEnded) {
             this.startDropTimer();
