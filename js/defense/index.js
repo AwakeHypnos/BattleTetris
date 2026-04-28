@@ -368,8 +368,6 @@ class DefenseSystem {
                 const scoreMultiplier = this.upgradeSystem.getScoreMultiplier();
                 this.defenseScore += Math.floor(baseKillScore * scoreMultiplier);
                 
-                this.addScoreForUpgrade(baseKillScore);
-                
                 return false;
             }
             return true;

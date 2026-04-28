@@ -516,6 +516,98 @@ button:disabled {
     color: #aaa;
 }
 
+/* 三选一升级菜单 */
+.buff-upgrade-menu {
+    background: linear-gradient(135deg, #16213e, #0f3460);
+    border: 3px solid #4ecca3;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    min-width: 800px;
+}
+
+.buff-upgrade-menu h2 {
+    color: #4ecca3;
+    font-size: 28px;
+    margin-bottom: 15px;
+    text-shadow: 0 2px 10px rgba(78, 204, 163, 0.5);
+}
+
+.upgrade-subtitle {
+    color: #aaa;
+    font-size: 16px;
+    margin-bottom: 30px;
+}
+
+.buff-options-container {
+    display: flex;
+    gap: 25px;
+    justify-content: center;
+}
+
+.buff-option-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+    border: 3px solid #4ecca3;
+    border-radius: 15px;
+    padding: 25px;
+    width: 220px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.buff-option-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent,
+        rgba(255, 255, 255, 0.1),
+        transparent
+    );
+    transform: rotate(45deg);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.buff-option-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 15px 40px rgba(78, 204, 163, 0.3);
+}
+
+.buff-option-card:hover::before {
+    opacity: 1;
+}
+
+.buff-category {
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    color: #aaa;
+}
+
+.buff-name {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 12px;
+    color: #4ecca3;
+}
+
+.buff-description {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #ccc;
+}
+
 /* 游戏结束菜单 */
 .game-over-menu {
     background: linear-gradient(135deg, #16213e, #0f3460);
