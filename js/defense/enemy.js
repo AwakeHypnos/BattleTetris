@@ -105,11 +105,6 @@ class Enemy {
         const y = this.y;
         const size = this.size;
         
-        const stickHeadRadius = size * 0.3;
-        const stickBodyLength = size * 0.5;
-        const stickArmLength = size * 0.35;
-        const stickLegLength = size * 0.4;
-        
         let bodyColor = this.color;
         if (this.isFrozen) {
             bodyColor = '#87CEEB';
@@ -119,16 +114,51 @@ class Enemy {
             bodyColor = '#90EE90';
             ctx.shadowColor = '#00FF00';
             ctx.shadowBlur = 10;
-        } else if (this.isElite) {
-            ctx.shadowColor = this.color;
-            ctx.shadowBlur = 15;
         }
         
         ctx.strokeStyle = bodyColor;
         ctx.fillStyle = bodyColor;
-        ctx.lineWidth = 3;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+        
+        if (this.type === 'NORMAL') {
+            this.drawNormalEnemy(ctx, x, y, size);
+        } else if (this.type === 'FAST') {
+            this.drawFastEnemy(ctx, x, y, size);
+        } else if (this.type === 'TANK') {
+            this.drawTankEnemy(ctx, x, y, size);
+        } else if (this.type === 'ELITE') {
+            this.drawEliteEnemy(ctx, x, y, size);
+        }
+        
+        ctx.shadowBlur = 0;
+        
+        const barWidth = size * 1.5;
+        const barHeight = 4;
+        const barX = x - barWidth / 2;
+        const barY = y - size - 12;
+        
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(barX, barY, barWidth, barHeight);
+        
+        const hpPercent = this.currentHP / this.maxHP;
+        let hpColor = '#4ecca3';
+        if (hpPercent < 0.3) hpColor = '#e94560';
+        else if (hpPercent < 0.6) hpColor = '#ff8c00';
+        
+        ctx.fillStyle = hpColor;
+        ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
+        
+        ctx.restore();
+    }
+    
+    drawNormalEnemy(ctx, x, y, size) {
+        const stickHeadRadius = size * 0.25;
+        const stickBodyLength = size * 0.45;
+        const stickArmLength = size * 0.3;
+        const stickLegLength = size * 0.35;
+        
+        ctx.lineWidth = 2.5;
         
         ctx.beginPath();
         ctx.arc(x, y - stickBodyLength - stickHeadRadius, stickHeadRadius, 0, Math.PI * 2);
@@ -158,33 +188,127 @@ class Enemy {
         ctx.moveTo(x, y);
         ctx.lineTo(x + stickLegLength, y + stickLegLength);
         ctx.stroke();
+    }
+    
+    drawFastEnemy(ctx, x, y, size) {
+        const radius = size * 0.35;
         
-        if (this.isTank) {
-            ctx.beginPath();
-            ctx.arc(x, y - stickBodyLength - stickHeadRadius, stickHeadRadius * 1.3, 0, Math.PI * 2);
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
+        ctx.lineWidth = 2;
+        
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(x - radius, y);
+        ctx.lineTo(x - radius - size * 0.3, y - size * 0.15);
+        ctx.lineTo(x - radius - size * 0.3, y + size * 0.15);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + radius + size * 0.3, y - size * 0.15);
+        ctx.lineTo(x + radius + size * 0.3, y + size * 0.15);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(x - radius * 0.4, y - radius * 0.2, radius * 0.2, 0, Math.PI * 2);
+        ctx.arc(x + radius * 0.4, y - radius * 0.2, radius * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(x - radius * 0.35, y - radius * 0.2, radius * 0.1, 0, Math.PI * 2);
+        ctx.arc(x + radius * 0.45, y - radius * 0.2, radius * 0.1, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    drawTankEnemy(ctx, x, y, size) {
+        const width = size * 1.2;
+        const height = size * 0.8;
+        const radius = size * 0.25;
+        
+        ctx.lineWidth = 3;
+        
+        ctx.fillRect(x - width / 2, y - height / 2, width, height);
+        
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x - width / 2, y - height / 2, width, height);
+        
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, radius * 1.2, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(x - radius * 0.4, y - radius * 0.3, radius * 0.25, 0, Math.PI * 2);
+        ctx.arc(x + radius * 0.4, y - radius * 0.3, radius * 0.25, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.arc(x - radius * 0.4, y - radius * 0.3, radius * 0.12, 0, Math.PI * 2);
+        ctx.arc(x + radius * 0.4, y - radius * 0.3, radius * 0.12, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    drawEliteEnemy(ctx, x, y, size) {
+        const radius = size * 0.4;
+        
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 20;
+        
+        ctx.lineWidth = 3;
+        
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i - Math.PI / 2;
+            const px = x + Math.cos(angle) * radius;
+            const py = y + Math.sin(angle) * radius;
+            if (i === 0) {
+                ctx.moveTo(px, py);
+            } else {
+                ctx.lineTo(px, py);
+            }
         }
+        ctx.closePath();
+        ctx.fill();
         
-        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
         
-        const barWidth = size * 1.5;
-        const barHeight = 4;
-        const barX = x - barWidth / 2;
-        const barY = y - stickBodyLength - stickHeadRadius * 2 - 12;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(x, y, radius * 0.5, 0, Math.PI * 2);
+        ctx.fill();
         
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fillRect(barX, barY, barWidth, barHeight);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(x, y, radius * 0.6, 0, Math.PI * 2);
+        ctx.stroke();
         
-        const hpPercent = this.currentHP / this.maxHP;
-        let hpColor = '#4ecca3';
-        if (hpPercent < 0.3) hpColor = '#e94560';
-        else if (hpPercent < 0.6) hpColor = '#ff8c00';
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(x - radius * 0.2, y - radius * 0.1, radius * 0.15, 0, Math.PI * 2);
+        ctx.arc(x + radius * 0.2, y - radius * 0.1, radius * 0.15, 0, Math.PI * 2);
+        ctx.fill();
         
-        ctx.fillStyle = hpColor;
-        ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
-        
-        ctx.restore();
+        ctx.fillStyle = '#ff0';
+        ctx.beginPath();
+        ctx.arc(x - radius * 0.2, y - radius * 0.1, radius * 0.08, 0, Math.PI * 2);
+        ctx.arc(x + radius * 0.2, y - radius * 0.1, radius * 0.08, 0, Math.PI * 2);
+        ctx.fill();
     }
 }

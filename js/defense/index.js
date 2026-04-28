@@ -15,6 +15,7 @@ class DefenseSystem {
         
         this.wallHP = CONSTANTS.WALL.maxHP;
         this.maxWallHP = CONSTANTS.WALL.maxHP;
+        this.tempShield = 0;
         
         this.killCount = 0;
         this.defenseScore = 0;
@@ -60,12 +61,20 @@ class DefenseSystem {
             SHOTGUN: 0
         };
         
+        this.totalUpgradePoints = 0;
+        
         this.upgradeSystem = new UpgradeSystem();
         
         this.pendingUpgrade = null;
         this.isUpgradePending = false;
         
         this.pendingUpgradeWeaponType = null;
+        
+        this.currentWave = 0;
+        this.waveState = 'inactive';
+        this.waveStartTime = 0;
+        this.waveEnemyCount = 0;
+        this.waveKilledCount = 0;
         
         this.initTurrets();
     }
@@ -155,6 +164,14 @@ class DefenseSystem {
             SHOTGUN: 0
         };
         
+        this.totalUpgradePoints = 0;
+        
+        this.currentWave = 0;
+        this.waveState = 'inactive';
+        this.waveStartTime = 0;
+        this.waveEnemyCount = 0;
+        this.waveKilledCount = 0;
+        
         this.upgradeSystem.reset();
         
         this.pendingUpgrade = null;
@@ -183,12 +200,15 @@ class DefenseSystem {
         const adjustedPoints = Math.floor(points * scoreMultiplier);
         
         this.weaponPoints[weaponType] += adjustedPoints;
+        this.totalUpgradePoints += adjustedPoints;
+        
+        this.checkWeaponUnlock(weaponType);
         
         const elapsedMinutes = (performance.now() - this.gameStartTime) / 60000;
         const threshold = this.calculateUpgradeThreshold(Math.max(0, elapsedMinutes));
         
-        if (this.weaponPoints[weaponType] >= threshold && !this.isUpgradePending) {
-            this.weaponPoints[weaponType] -= threshold;
+        if (this.totalUpgradePoints >= threshold && !this.isUpgradePending) {
+            this.totalUpgradePoints -= threshold;
             
             const activeWeaponTypes = this.getActiveWeaponTypes();
             const upgradeOptions = this.upgradeSystem.generateUpgradeOptions(activeWeaponTypes);
@@ -197,7 +217,7 @@ class DefenseSystem {
                 this.pendingUpgrade = {
                     options: upgradeOptions,
                     triggerWeaponType: weaponType,
-                    needsUnlock: !this.weaponUnlockStates[weaponType]
+                    needsUnlock: false
                 };
                 this.pendingUpgradeWeaponType = weaponType;
                 this.isUpgradePending = true;
@@ -208,9 +228,31 @@ class DefenseSystem {
         return null;
     }
     
+    checkWeaponUnlock(weaponType) {
+        if (this.weaponUnlockStates[weaponType]) return;
+        
+        const elapsedMinutes = (performance.now() - this.gameStartTime) / 60000;
+        const threshold = this.calculateUpgradeThreshold(Math.max(0, elapsedMinutes));
+        
+        if (this.weaponPoints[weaponType] >= threshold) {
+            this.weaponPoints[weaponType] -= threshold;
+            
+            const existingTurret = this.turrets.find(t => t.weaponType === weaponType);
+            if (!existingTurret) {
+                this.addTurretForWeapon(weaponType);
+                this.weaponUnlockStates[weaponType] = true;
+                this.weaponLevels[weaponType] = 1;
+            }
+        }
+    }
+    
     getCurrentUpgradeThreshold() {
         const elapsedMinutes = (performance.now() - this.gameStartTime) / 60000;
         return this.calculateUpgradeThreshold(Math.max(0, elapsedMinutes));
+    }
+    
+    getSelectedUpgrades() {
+        return this.upgradeSystem ? this.upgradeSystem.getSelectedUpgrades() : [];
     }
     
     selectUpgrade(optionIndex) {
@@ -227,6 +269,7 @@ class DefenseSystem {
             if (!existingTurret) {
                 this.addTurretForWeapon(triggerWeaponType);
                 this.weaponUnlockStates[triggerWeaponType] = true;
+                this.weaponLevels[triggerWeaponType] = 1;
             }
         }
         
@@ -309,7 +352,7 @@ class DefenseSystem {
     
     spawnEnemy(count = 1, difficultyMultiplier = 1) {
         const maxSpawnPerBatch = CONSTANTS.ENEMY_SPAWN.maxSpawnPerBatch || 20;
-        const maxEnemiesOnScreen = CONSTANTS.ENEMY_SPAWN.maxEnemiesOnScreen || 50;
+        const maxEnemiesOnScreen = CONSTANTS.ENEMY_SPAWN.maxEnemiesOnScreen || 200;
         
         const currentEnemyCount = this.enemies.length;
         const availableSlots = maxEnemiesOnScreen - currentEnemyCount;
@@ -318,26 +361,69 @@ class DefenseSystem {
         
         const actualCount = Math.min(count, maxSpawnPerBatch, availableSlots);
         
-        const types = ['NORMAL', 'NORMAL', 'NORMAL', 'FAST', 'TANK'];
+        const types = this.getEnemyTypesForCurrentTime();
         
         const elapsedMinutes = (performance.now() - this.gameStartTime) / 60000;
-        if (elapsedMinutes > 2) {
-            types.push('ELITE');
-        }
+        let baseDefense = this.calculateEnemyDefense(elapsedMinutes);
+        let baseDifficulty = difficultyMultiplier;
         
-        const defense = this.calculateEnemyDefense(elapsedMinutes);
+        const criticalCount = CONSTANTS.ENEMY_SPAWN.criticalEnemyCount || 100;
+        if (currentEnemyCount >= criticalCount) {
+            const excessCount = currentEnemyCount - criticalCount;
+            const hpMultiplier = Math.pow(
+                CONSTANTS.ENEMY_SPAWN.criticalHpMultiplier || 1.5,
+                Math.floor(excessCount / 10) + 1
+            );
+            const defenseMultiplier = Math.pow(
+                CONSTANTS.ENEMY_SPAWN.criticalDefenseMultiplier || 2.0,
+                Math.floor(excessCount / 10) + 1
+            );
+            
+            baseDifficulty *= hpMultiplier;
+            baseDefense = Math.min(90, baseDefense * defenseMultiplier);
+        }
         
         for (let i = 0; i < actualCount; i++) {
             const type = Utils.randomChoice(types);
             const x = Utils.randomInt(30, this.canvas.width - 30);
             const y = -40 - Math.random() * 60;
             
-            const enemy = new Enemy(x, y, type, difficultyMultiplier, defense);
+            const enemy = new Enemy(x, y, type, baseDifficulty, baseDefense);
             this.enemies.push(enemy);
         }
     }
     
+    getEnemyTypesForCurrentTime() {
+        const elapsedSeconds = (performance.now() - this.gameStartTime) / 1000;
+        
+        if (elapsedSeconds <= 30) {
+            return ['NORMAL'];
+        } else if (elapsedSeconds <= 45) {
+            return ['FAST'];
+        } else if (elapsedSeconds <= 60) {
+            return ['TANK'];
+        } else if (elapsedSeconds <= 75) {
+            return ['ELITE'];
+        } else if (elapsedSeconds <= 80) {
+            return [];
+        } else {
+            return ['NORMAL', 'NORMAL', 'NORMAL', 'FAST', 'TANK', 'ELITE'];
+        }
+    }
+    
+    shouldSpawnEnemies() {
+        const elapsedSeconds = (performance.now() - this.gameStartTime) / 1000;
+        return elapsedSeconds > 80 || elapsedSeconds <= 75;
+    }
+    
+    isEnemyGrowthEnabled() {
+        const elapsedSeconds = (performance.now() - this.gameStartTime) / 1000;
+        return elapsedSeconds > 80;
+    }
+    
     spawnWave(waveNumber, difficultyMultiplier) {
+        if (!this.shouldSpawnEnemies()) return;
+        
         const baseCount = CONSTANTS.ENEMY_SPAWN.waveBaseCount;
         const increment = CONSTANTS.ENEMY_SPAWN.waveIncrementCount;
         const count = baseCount + (waveNumber - 1) * increment;
@@ -345,37 +431,193 @@ class DefenseSystem {
         this.spawnEnemy(count, difficultyMultiplier);
     }
     
+    getWaveConfig(waveNumber, elapsedSeconds) {
+        if (waveNumber === 1) {
+            return {
+                type: 'NORMAL',
+                count: CONSTANTS.ENEMY_SPAWN.wave1Count,
+                duration: 30,
+                startSecond: 0
+            };
+        } else if (waveNumber === 2) {
+            return {
+                type: 'FAST',
+                count: CONSTANTS.ENEMY_SPAWN.wave2Count,
+                duration: 15,
+                startSecond: 30
+            };
+        } else if (waveNumber === 3) {
+            return {
+                type: 'TANK',
+                count: CONSTANTS.ENEMY_SPAWN.wave3Count,
+                duration: 15,
+                startSecond: 45
+            };
+        } else if (waveNumber === 4) {
+            return {
+                type: 'ELITE',
+                count: CONSTANTS.ENEMY_SPAWN.wave4Count,
+                duration: 15,
+                startSecond: 60
+            };
+        } else if (waveNumber >= 5) {
+            const wave5Offset = waveNumber - 5;
+            return {
+                type: 'MIXED',
+                count: CONSTANTS.ENEMY_SPAWN.wave5BaseCount + wave5Offset * CONSTANTS.ENEMY_SPAWN.wave5IncrementPerWave,
+                duration: null,
+                startSecond: 80 + wave5Offset * 30,
+                gapSeconds: CONSTANTS.ENEMY_SPAWN.waveGapSeconds
+            };
+        }
+        return null;
+    }
+    
+    getWaveTypes(waveNumber) {
+        if (waveNumber === 1) return ['NORMAL'];
+        if (waveNumber === 2) return ['FAST'];
+        if (waveNumber === 3) return ['TANK'];
+        if (waveNumber === 4) return ['ELITE'];
+        if (waveNumber >= 5) return ['NORMAL', 'NORMAL', 'FAST', 'TANK', 'ELITE'];
+        return ['NORMAL'];
+    }
+    
+    spawnWaveEnemies(waveNumber, count, difficultyMultiplier) {
+        const maxSpawnPerBatch = CONSTANTS.ENEMY_SPAWN.maxSpawnPerBatch || 20;
+        const maxEnemiesOnScreen = CONSTANTS.ENEMY_SPAWN.maxEnemiesOnScreen || 200;
+        
+        const currentEnemyCount = this.enemies.length;
+        const availableSlots = maxEnemiesOnScreen - currentEnemyCount;
+        
+        if (availableSlots <= 0) return 0;
+        
+        const actualCount = Math.min(count, maxSpawnPerBatch, availableSlots);
+        const types = this.getWaveTypes(waveNumber);
+        
+        const elapsedMinutes = (performance.now() - this.gameStartTime) / 60000;
+        let baseDefense = this.calculateEnemyDefense(elapsedMinutes);
+        let baseDifficulty = difficultyMultiplier;
+        
+        const criticalCount = CONSTANTS.ENEMY_SPAWN.criticalEnemyCount || 100;
+        if (currentEnemyCount >= criticalCount) {
+            const excessCount = currentEnemyCount - criticalCount;
+            const hpMultiplier = Math.pow(
+                CONSTANTS.ENEMY_SPAWN.criticalHpMultiplier || 1.5,
+                Math.floor(excessCount / 10) + 1
+            );
+            const defenseMultiplier = Math.pow(
+                CONSTANTS.ENEMY_SPAWN.criticalDefenseMultiplier || 2.0,
+                Math.floor(excessCount / 10) + 1
+            );
+            
+            baseDifficulty *= hpMultiplier;
+            baseDefense = Math.min(90, baseDefense * defenseMultiplier);
+        }
+        
+        for (let i = 0; i < actualCount; i++) {
+            const type = Utils.randomChoice(types);
+            const x = Utils.randomInt(30, this.canvas.width - 30);
+            const y = -40 - Math.random() * 60 - i * 20;
+            
+            const enemy = new Enemy(x, y, type, baseDifficulty, baseDefense);
+            this.enemies.push(enemy);
+        }
+        
+        return actualCount;
+    }
+    
+    updateWaveSystem(elapsedSeconds, currentTime, difficulty) {
+        if (elapsedSeconds < 0) return;
+        
+        if (this.currentWave === 0 && this.waveState === 'inactive') {
+            this.currentWave = 1;
+            this.waveState = 'starting';
+            this.waveStartTime = elapsedSeconds;
+            this.waveKilledCount = 0;
+            this.waveEnemyCount = 0;
+        }
+        
+        if (elapsedSeconds >= 75 && elapsedSeconds < 80) {
+            if (this.waveState !== 'paused') {
+                this.waveState = 'paused';
+            }
+            return;
+        }
+        
+        const config = this.getWaveConfig(this.currentWave, elapsedSeconds);
+        if (!config) return;
+        
+        if (this.currentWave <= 4) {
+            if (elapsedSeconds >= config.startSecond && this.waveState === 'inactive') {
+                this.currentWave = this.currentWave <= 4 ? this.currentWave : 1;
+                this.waveState = 'starting';
+                this.waveStartTime = elapsedSeconds;
+                this.waveKilledCount = 0;
+                this.waveEnemyCount = 0;
+            }
+            
+            if (this.waveState === 'starting') {
+                const spawned = this.spawnWaveEnemies(this.currentWave, config.count, difficulty.hpMultiplier);
+                this.waveEnemyCount += spawned;
+                this.waveState = 'active';
+            }
+            
+            if (this.waveState === 'active') {
+                const waveElapsed = elapsedSeconds - this.waveStartTime;
+                if (waveElapsed >= config.duration || (this.enemies.length === 0 && waveElapsed >= 5)) {
+                    this.waveState = 'inactive';
+                    if (this.currentWave < 4) {
+                        this.currentWave++;
+                    }
+                }
+            }
+        } else {
+            if (this.waveState === 'inactive' || this.waveState === 'paused') {
+                this.waveState = 'starting';
+                this.waveStartTime = elapsedSeconds;
+                this.waveKilledCount = 0;
+                this.waveEnemyCount = 0;
+            }
+            
+            if (this.waveState === 'starting') {
+                const spawned = this.spawnWaveEnemies(this.currentWave, config.count, difficulty.hpMultiplier);
+                this.waveEnemyCount += spawned;
+                this.waveState = 'active';
+            }
+            
+            if (this.waveState === 'active') {
+                if (this.enemies.length === 0 && this.waveEnemyCount > 0) {
+                    this.waveState = 'gap';
+                    this.waveStartTime = elapsedSeconds;
+                }
+            }
+            
+            if (this.waveState === 'gap') {
+                const gapElapsed = elapsedSeconds - this.waveStartTime;
+                if (gapElapsed >= config.gapSeconds) {
+                    this.currentWave++;
+                    this.waveState = 'starting';
+                    this.waveStartTime = elapsedSeconds;
+                    this.waveKilledCount = 0;
+                    this.waveEnemyCount = 0;
+                }
+            }
+        }
+    }
+    
     update(currentTime) {
         const elapsedSeconds = (currentTime - this.gameStartTime) / 1000;
         const elapsedMinutes = elapsedSeconds / 60;
         
-        const difficulty = this.calculateDifficulty(elapsedSeconds);
+        let difficulty;
+        if (this.isEnemyGrowthEnabled()) {
+            difficulty = this.calculateDifficulty(elapsedSeconds);
+        } else {
+            difficulty = { hpMultiplier: 1, speedMultiplier: 1 };
+        }
         this.difficultyMultiplier = difficulty.hpMultiplier;
         
-        const effectiveSpawnInterval = CONSTANTS.ENEMY.baseSpawnInterval / this.speedMultiplier;
-        
-        if (this.lastWaveTime === undefined) {
-            this.lastWaveTime = 0;
-        }
-        
-        const waveIntervalMinutes = CONSTANTS.ENEMY_SPAWN.waveIntervalMinutes;
-        const currentWaveNumber = Math.floor(elapsedMinutes / waveIntervalMinutes);
-        const lastWaveNumber = Math.floor(this.lastWaveTime / waveIntervalMinutes);
-        
-        if (currentWaveNumber > lastWaveNumber && currentWaveNumber >= 1) {
-            this.spawnWave(currentWaveNumber, this.difficultyMultiplier);
-            this.lastWaveTime = elapsedMinutes;
-        }
-        
-        const maxEnemiesOnScreen = CONSTANTS.ENEMY_SPAWN.maxEnemiesOnScreen || 50;
-        if (currentTime - this.lastSpawnTime >= effectiveSpawnInterval && this.enemies.length < maxEnemiesOnScreen) {
-            const extraCount = Math.floor(elapsedSeconds / 30) * CONSTANTS.ENEMY_SPAWN.extraCountPer30Seconds;
-            const baseCount = CONSTANTS.ENEMY_SPAWN.baseCount + extraCount;
-            const totalCount = Math.ceil(baseCount * this.speedMultiplier);
-            
-            this.spawnEnemy(totalCount, this.difficultyMultiplier);
-            this.lastSpawnTime = currentTime;
-        }
+        this.updateWaveSystem(elapsedSeconds, currentTime, difficulty);
         
         this.enemies.forEach(enemy => {
             let speedMod = difficulty.speedMultiplier;
@@ -385,7 +627,16 @@ class DefenseSystem {
         const wallY = this.canvas.height - CONSTANTS.DEFENSE.WALL_HEIGHT;
         this.enemies = this.enemies.filter(enemy => {
             if (enemy.y >= wallY) {
-                this.wallHP -= enemy.damageToWall;
+                const damage = enemy.damageToWall;
+                if (this.tempShield > 0) {
+                    const shieldDamage = Math.min(this.tempShield, damage);
+                    this.tempShield -= shieldDamage;
+                    if (damage > shieldDamage) {
+                        this.wallHP -= (damage - shieldDamage);
+                    }
+                } else {
+                    this.wallHP -= damage;
+                }
                 return false;
             }
             if (enemy.currentHP <= 0) {
@@ -394,6 +645,7 @@ class DefenseSystem {
                 }
                 
                 this.killCount++;
+                this.waveKilledCount++;
                 
                 const baseKillScore = CONSTANTS.ENEMY.scorePerKill + 
                     Math.floor(enemy.maxHP * CONSTANTS.ENEMY.scorePerHP);

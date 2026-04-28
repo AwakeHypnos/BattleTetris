@@ -51,6 +51,14 @@ class BattleTetrisGame {
         this.isInMainMenu = true;
         this.isInUpgradeMenu = false;
         this.isInGameOverMenu = false;
+        
+        this.turretOverloadActive = false;
+        this.turretOverloadEndTime = 0;
+        
+        this.nextEffectDouble = false;
+        
+        this.sacrificeMode = false;
+        this.sacrificeFromPause = false;
     }
     
     createEmptyGrid() {
@@ -71,6 +79,8 @@ class BattleTetrisGame {
             pauseMenu: document.getElementById('pauseOverlay'),
             upgradeMenu: document.getElementById('weaponUpgradeOverlay'),
             buffUpgradeMenu: document.getElementById('buffUpgradeOverlay'),
+            unlockedUpgradesMenu: document.getElementById('unlockedUpgradesOverlay'),
+            sacrificeMenu: document.getElementById('sacrificeOverlay'),
             gameOverMenu: document.getElementById('gameOverOverlay'),
             howToPlayMenu: document.getElementById('howToPlayOverlay'),
             speedBoostMenu: document.getElementById('speedBoostOverlay'),
@@ -80,12 +90,20 @@ class BattleTetrisGame {
             totalScore: document.getElementById('totalScore'),
             level: document.getElementById('level'),
             combo: document.getElementById('combo'),
-            
             wallHpFill: document.getElementById('wallHpFill'),
             wallHpText: document.getElementById('wallHpText'),
             killCount: document.getElementById('killCount'),
             survivalTime: document.getElementById('survivalTime'),
             damageBonus: document.getElementById('damageBonus'),
+            
+            shieldIndicator: document.getElementById('shieldIndicator'),
+            shieldValue: document.getElementById('shieldValue'),
+            doubleEffectIndicator: document.getElementById('doubleEffectIndicator'),
+            turretOverloadIndicator: document.getElementById('turretOverloadIndicator'),
+            overloadText: document.getElementById('overloadText'),
+            
+            waveNumber: document.getElementById('waveNumber'),
+            waveState: document.getElementById('waveState'),
             
             weaponProgress: {
                 FIRE: document.getElementById('fireProgress'),
@@ -118,6 +136,10 @@ class BattleTetrisGame {
         document.getElementById('howToPlayBtn').addEventListener('click', () => this.showHowToPlay());
         
         document.getElementById('resumeBtn').addEventListener('click', () => this.resumeGame());
+        document.getElementById('showUpgradesBtn').addEventListener('click', () => this.showUnlockedUpgrades());
+        document.getElementById('closeUpgradesBtn').addEventListener('click', () => this.hideUnlockedUpgrades());
+        document.getElementById('sacrificeFromPauseBtn').addEventListener('click', () => this.showSacrificeMenuFromPause());
+        document.getElementById('cancelSacrifice').addEventListener('click', () => this.hideSacrificeMenu());
         document.getElementById('loadMenuBtn').addEventListener('click', () => this.loadGame());
         document.getElementById('saveMenuBtn').addEventListener('click', () => this.saveGame());
         document.getElementById('mainMenuBtn').addEventListener('click', () => this.returnToMainMenu());
@@ -145,11 +167,22 @@ class BattleTetrisGame {
         
         if (e.key === 'Escape') {
             if (this.isInUpgradeMenu) return;
+            if (this.sacrificeMode) {
+                this.hideSacrificeMenu();
+                return;
+            }
             this.togglePause();
             return;
         }
         
-        if (this.gameOver || this.isPaused || !this.isStarted) return;
+        if (e.key === 'q' || e.key === 'Q') {
+            if (!this.gameOver && this.isStarted && !this.isPaused) {
+                this.showSacrificeMenu();
+            }
+            return;
+        }
+        
+        if (this.gameOver || this.isPaused || !this.isStarted || this.sacrificeMode) return;
         
         switch (e.key) {
             case 'ArrowLeft':
@@ -465,10 +498,20 @@ class BattleTetrisGame {
     }
     
     clearBlocks(toClear, clearedColors) {
-        this.updateTetrisScore(toClear.size);
+        let effectMultiplier = 1;
+        if (this.nextEffectDouble) {
+            effectMultiplier = 2;
+            this.nextEffectDouble = false;
+        }
+        
+        const totalBlocksCleared = toClear.size * effectMultiplier;
+        this.updateTetrisScore(totalBlocksCleared);
+        
+        this.checkSkillTriggers(clearedColors, effectMultiplier);
         
         clearedColors.forEach((count, color) => {
-            const basePoints = count * (5 + this.combo * 2);
+            const adjustedCount = count * effectMultiplier;
+            const basePoints = adjustedCount * (5 + this.combo * 2);
             
             const upgrade = this.defenseSystem.addWeaponPoints(color, basePoints);
             
@@ -492,6 +535,87 @@ class BattleTetrisGame {
                 this.startDropTimer();
             }
         }, 100);
+    }
+    
+    checkSkillTriggers(clearedColors, effectMultiplier) {
+        if (this.combo >= CONSTANTS.SKILLS.FULL_SCREEN_BOMB.comboRequirement) {
+            this.triggerFullScreenBomb(effectMultiplier);
+        }
+        
+        let maxSameColorCount = 0;
+        clearedColors.forEach((count, color) => {
+            if (count > maxSameColorCount) {
+                maxSameColorCount = count;
+            }
+        });
+        
+        if (maxSameColorCount >= CONSTANTS.SKILLS.TURRET_OVERLOAD.sameColorRequirement) {
+            this.triggerTurretOverload();
+        }
+        
+        const greenCount = clearedColors.get('GREEN') || 0;
+        if (greenCount >= CONSTANTS.SKILLS.EMERGENCY_REPAIR.greenRequirement) {
+            this.triggerEmergencyRepair();
+        }
+    }
+    
+    triggerFullScreenBomb(effectMultiplier) {
+        const baseDamage = CONSTANTS.SKILLS.FULL_SCREEN_BOMB.baseDamage * effectMultiplier;
+        
+        this.defenseSystem.enemies.forEach(enemy => {
+            enemy.takeDamage(baseDamage);
+        });
+        
+        this.showSkillNotification('全屏轰炸！', CONSTANTS.SKILLS.FULL_SCREEN_BOMB.color);
+    }
+    
+    triggerTurretOverload() {
+        this.turretOverloadActive = true;
+        this.turretOverloadEndTime = performance.now() + CONSTANTS.SKILLS.TURRET_OVERLOAD.duration;
+        
+        this.defenseSystem.turrets.forEach(turret => {
+            if (!turret.originalAttackSpeed) {
+                turret.originalAttackSpeed = turret.attackSpeed;
+            }
+            turret.attackSpeed = turret.originalAttackSpeed / CONSTANTS.SKILLS.TURRET_OVERLOAD.attackSpeedMultiplier;
+        });
+        
+        this.showSkillNotification('炮塔超载！', CONSTANTS.SKILLS.TURRET_OVERLOAD.color);
+    }
+    
+    triggerEmergencyRepair() {
+        this.defenseSystem.wallHP = this.defenseSystem.maxWallHP;
+        
+        this.showSkillNotification('紧急修复！', CONSTANTS.SKILLS.EMERGENCY_REPAIR.color);
+    }
+    
+    showSkillNotification(message, color) {
+        const notification = document.createElement('div');
+        notification.className = 'skill-notification';
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: ${color};
+            color: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 2000;
+            box-shadow: 0 0 30px ${color};
+            animation: skillPulse 1s ease-in-out;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 1500);
     }
     
     applyGravity() {
@@ -560,6 +684,10 @@ class BattleTetrisGame {
     }
     
     calculateTotalScore() {
+        if (this.survivalTime < 1) {
+            return 0;
+        }
+        
         const gameMinutes = Math.max(1, Math.floor(this.survivalTime / 60));
         const wallHPBonus = Math.max(0, this.defenseSystem.wallHP) * CONSTANTS.SCORING.WALL_HP_BONUS;
         
@@ -619,7 +747,71 @@ class BattleTetrisGame {
             this.ui.damageBonus.textContent = `+${damageBonusPercent}%`;
         }
         
+        this.updateStatusIndicators();
+        
         this.updateWeaponProgressUI();
+    }
+    
+    updateStatusIndicators() {
+        if (this.ui.shieldIndicator) {
+            if (this.defenseSystem.tempShield > 0) {
+                this.ui.shieldIndicator.classList.remove('hidden');
+                if (this.ui.shieldValue) {
+                    this.ui.shieldValue.textContent = this.defenseSystem.tempShield;
+                }
+            } else {
+                this.ui.shieldIndicator.classList.add('hidden');
+            }
+        }
+        
+        if (this.ui.doubleEffectIndicator) {
+            if (this.nextEffectDouble) {
+                this.ui.doubleEffectIndicator.classList.remove('hidden');
+            } else {
+                this.ui.doubleEffectIndicator.classList.add('hidden');
+            }
+        }
+        
+        if (this.ui.turretOverloadIndicator) {
+            if (this.turretOverloadActive) {
+                this.ui.turretOverloadIndicator.classList.remove('hidden');
+                const remaining = Math.max(0, (this.turretOverloadEndTime - Date.now()) / 1000).toFixed(1);
+                if (this.ui.overloadText) {
+                    this.ui.overloadText.textContent = `炮塔超载 ${remaining}s`;
+                }
+            } else {
+                this.ui.turretOverloadIndicator.classList.add('hidden');
+            }
+        }
+        
+        this.updateWaveDisplay();
+    }
+    
+    updateWaveDisplay() {
+        if (!this.ui.waveNumber || !this.ui.waveState) return;
+        
+        const wave = this.defenseSystem.currentWave || 1;
+        const state = this.defenseSystem.waveState || 'inactive';
+        
+        this.ui.waveNumber.textContent = wave;
+        
+        let stateText = '准备中';
+        let stateClass = '';
+        
+        if (state === 'starting' || state === 'active') {
+            stateText = '进行中';
+        } else if (state === 'gap') {
+            stateText = '波次间隙';
+            stateClass = 'gap';
+        } else if (state === 'paused') {
+            stateText = '暂停中';
+            stateClass = 'paused';
+        } else if (state === 'inactive') {
+            stateText = '准备中';
+        }
+        
+        this.ui.waveState.textContent = stateText;
+        this.ui.waveState.className = `wave-state ${stateClass}`;
     }
     
     updateWeaponProgressUI() {
@@ -796,6 +988,8 @@ class BattleTetrisGame {
         
         this.survivalTime += deltaTime / 1000;
         
+        this.checkTurretOverloadExpiry(timestamp);
+        
         this.defenseSystem.update(timestamp);
         
         if (this.defenseSystem.isGameOver()) {
@@ -807,6 +1001,18 @@ class BattleTetrisGame {
         this.render();
         
         this.animationId = requestAnimationFrame((t) => this.gameLoop(t));
+    }
+    
+    checkTurretOverloadExpiry(currentTime) {
+        if (this.turretOverloadActive && currentTime >= this.turretOverloadEndTime) {
+            this.turretOverloadActive = false;
+            
+            this.defenseSystem.turrets.forEach(turret => {
+                if (turret.originalAttackSpeed) {
+                    turret.attackSpeed = turret.originalAttackSpeed;
+                }
+            });
+        }
     }
     
     startNewGame() {
@@ -875,6 +1081,264 @@ class BattleTetrisGame {
     
     hidePauseMenu() {
         this.ui.pauseMenu.classList.add('hidden');
+    }
+    
+    showUnlockedUpgrades() {
+        this.ui.pauseMenu.classList.add('hidden');
+        
+        const turretsList = document.getElementById('unlockedTurretsList');
+        const effectsList = document.getElementById('unlockedEffectsList');
+        
+        turretsList.innerHTML = '';
+        effectsList.innerHTML = '';
+        
+        const weaponTypes = ['FIRE', 'PIERCE', 'ICE', 'POISON', 'SPACE', 'SHOTGUN'];
+        let hasUnlockedTurrets = false;
+        
+        weaponTypes.forEach(type => {
+            if (this.defenseSystem.weaponUnlockStates[type]) {
+                hasUnlockedTurrets = true;
+                const weaponName = CONSTANTS.WEAPON_NAMES[type];
+                const weaponConfig = CONSTANTS.WEAPONS[type];
+                const level = this.defenseSystem.weaponLevels[type];
+                
+                const turretItem = document.createElement('div');
+                turretItem.className = 'unlocked-item turret-item';
+                turretItem.innerHTML = `
+                    <div class="item-icon" style="background: ${weaponConfig.color}; box-shadow: 0 0 10px ${weaponConfig.color}"></div>
+                    <div class="item-info">
+                        <div class="item-name">${weaponName}</div>
+                        <div class="item-level">等级: ${level}</div>
+                    </div>
+                `;
+                turretsList.appendChild(turretItem);
+            }
+        });
+        
+        if (!hasUnlockedTurrets) {
+            turretsList.innerHTML = '<p class="no-upgrades">暂无已解锁炮塔</p>';
+        }
+        
+        const selectedUpgrades = this.defenseSystem.getSelectedUpgrades();
+        if (selectedUpgrades && selectedUpgrades.length > 0) {
+            selectedUpgrades.forEach(upgrade => {
+                const effectItem = document.createElement('div');
+                effectItem.className = 'unlocked-item effect-item';
+                effectItem.innerHTML = `
+                    <div class="item-icon" style="background: ${upgrade.color}; box-shadow: 0 0 10px ${upgrade.color}"></div>
+                    <div class="item-info">
+                        <div class="item-name">${upgrade.name}</div>
+                        <div class="item-desc">${upgrade.description}</div>
+                    </div>
+                `;
+                effectsList.appendChild(effectItem);
+            });
+        } else {
+            effectsList.innerHTML = '<p class="no-upgrades">暂无已解锁效果</p>';
+        }
+        
+        this.ui.unlockedUpgradesMenu.classList.remove('hidden');
+    }
+    
+    hideUnlockedUpgrades() {
+        this.ui.unlockedUpgradesMenu.classList.add('hidden');
+        this.ui.pauseMenu.classList.remove('hidden');
+    }
+    
+    showSacrificeMenu() {
+        if (this.currentPiece) {
+            this.showSkillNotification('请先放置当前方块！', '#ff8c00');
+            return;
+        }
+        
+        this.sacrificeMode = true;
+        this.sacrificeFromPause = false;
+        this.isPaused = true;
+        this.stopDropTimer();
+        
+        this.showSacrificeMenuUI();
+    }
+    
+    showSacrificeMenuFromPause() {
+        if (this.currentPiece) {
+            this.showSkillNotification('请先放置当前方块！', '#ff8c00');
+            return;
+        }
+        
+        this.sacrificeMode = true;
+        this.sacrificeFromPause = true;
+        
+        this.ui.pauseMenu.classList.add('hidden');
+        
+        this.showSacrificeMenuUI();
+    }
+    
+    showSacrificeMenuUI() {
+        const blockCount = this.countBlocksOnGrid();
+        
+        const countElement = document.getElementById('sacrificeBlockCount');
+        if (countElement) {
+            countElement.textContent = `当前场上方块数：${blockCount}`;
+        }
+        
+        const container = document.getElementById('sacrificeOptionsContainer');
+        if (container) {
+            container.innerHTML = '';
+            
+            const sacrificeTypes = [
+                {
+                    key: 'REFRESH_BOARD',
+                    config: CONSTANTS.SACRIFICE.REFRESH_BOARD,
+                    canAfford: blockCount >= CONSTANTS.SACRIFICE.REFRESH_BOARD.blockCount
+                },
+                {
+                    key: 'TEMP_SHIELD',
+                    config: CONSTANTS.SACRIFICE.TEMP_SHIELD,
+                    canAfford: blockCount >= CONSTANTS.SACRIFICE.TEMP_SHIELD.blockCount
+                },
+                {
+                    key: 'DOUBLE_EFFECT',
+                    config: CONSTANTS.SACRIFICE.DOUBLE_EFFECT,
+                    canAfford: blockCount >= CONSTANTS.SACRIFICE.DOUBLE_EFFECT.blockCount
+                }
+            ];
+            
+            sacrificeTypes.forEach(type => {
+                const card = document.createElement('div');
+                card.className = `sacrifice-option-card ${type.canAfford ? '' : 'disabled'}`;
+                card.style.borderColor = type.config.color;
+                card.style.boxShadow = type.canAfford ? `0 0 20px ${type.config.color}40` : 'none';
+                
+                card.innerHTML = `
+                    <div class="sacrifice-cost" style="color: ${type.config.color}">${type.config.blockCount} 方块</div>
+                    <div class="sacrifice-name" style="color: ${type.config.color}">${type.config.name}</div>
+                    <div class="sacrifice-description">${type.config.description}</div>
+                `;
+                
+                if (type.canAfford) {
+                    card.addEventListener('click', () => this.executeSacrifice(type.key, type.config.blockCount));
+                }
+                
+                container.appendChild(card);
+            });
+        }
+        
+        this.ui.sacrificeMenu.classList.remove('hidden');
+    }
+    
+    hideSacrificeMenu() {
+        this.sacrificeMode = false;
+        this.ui.sacrificeMenu.classList.add('hidden');
+        
+        if (this.sacrificeFromPause) {
+            this.sacrificeFromPause = false;
+            this.ui.pauseMenu.classList.remove('hidden');
+        } else {
+            if (this.isStarted && !this.gameOver && !this.tetrisEnded) {
+                this.isPaused = false;
+                document.getElementById('pauseBtn').textContent = '暂停';
+                this.startDropTimer();
+                this.animationId = requestAnimationFrame((t) => this.gameLoop(t));
+            }
+        }
+    }
+    
+    countBlocksOnGrid() {
+        let count = 0;
+        for (let y = 0; y < CONSTANTS.GRID_HEIGHT; y++) {
+            for (let x = 0; x < CONSTANTS.GRID_WIDTH; x++) {
+                if (this.grid[y][x] !== null) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+    
+    executeSacrifice(sacrificeType, blockCount) {
+        const blocksRemoved = this.removeRandomBlocks(blockCount);
+        
+        if (blocksRemoved < blockCount) {
+            this.showSkillNotification('方块数量不足！', '#e94560');
+            return;
+        }
+        
+        switch (sacrificeType) {
+            case 'REFRESH_BOARD':
+                this.sacrificeRefreshBoard();
+                break;
+            case 'TEMP_SHIELD':
+                this.sacrificeTempShield();
+                break;
+            case 'DOUBLE_EFFECT':
+                this.sacrificeDoubleEffect();
+                break;
+        }
+        
+        this.hideSacrificeMenu();
+        this.applyGravity();
+        this.render();
+    }
+    
+    removeRandomBlocks(count) {
+        const blocks = [];
+        
+        for (let y = 0; y < CONSTANTS.GRID_HEIGHT; y++) {
+            for (let x = 0; x < CONSTANTS.GRID_WIDTH; x++) {
+                if (this.grid[y][x] !== null) {
+                    blocks.push({x, y});
+                }
+            }
+        }
+        
+        Utils.shuffleArray(blocks);
+        
+        const toRemove = blocks.slice(0, count);
+        
+        toRemove.forEach(pos => {
+            this.grid[pos.y][pos.x] = null;
+        });
+        
+        return toRemove.length;
+    }
+    
+    sacrificeRefreshBoard() {
+        const remainingBlocks = [];
+        
+        for (let y = 0; y < CONSTANTS.GRID_HEIGHT; y++) {
+            for (let x = 0; x < CONSTANTS.GRID_WIDTH; x++) {
+                if (this.grid[y][x] !== null) {
+                    remainingBlocks.push({x, y, color: this.grid[y][x]});
+                    this.grid[y][x] = null;
+                }
+            }
+        }
+        
+        const colors = CONSTANTS.BLOCK_COLORS;
+        
+        for (let y = 0; y < CONSTANTS.GRID_HEIGHT; y++) {
+            for (let x = 0; x < CONSTANTS.GRID_WIDTH; x++) {
+                if (Math.random() < 0.3) {
+                    this.grid[y][x] = Utils.randomChoice(colors);
+                }
+            }
+        }
+        
+        this.applyGravity();
+        
+        this.showSkillNotification('布局已刷新！', CONSTANTS.SACRIFICE.REFRESH_BOARD.color);
+    }
+    
+    sacrificeTempShield() {
+        this.defenseSystem.tempShield += CONSTANTS.SACRIFICE.TEMP_SHIELD.shieldAmount;
+        
+        this.showSkillNotification(`获得 ${CONSTANTS.SACRIFICE.TEMP_SHIELD.shieldAmount} 点临时护盾！`, CONSTANTS.SACRIFICE.TEMP_SHIELD.color);
+    }
+    
+    sacrificeDoubleEffect() {
+        this.nextEffectDouble = true;
+        
+        this.showSkillNotification('下一次消除效果翻倍！', CONSTANTS.SACRIFICE.DOUBLE_EFFECT.color);
     }
     
     showUpgradeMenu(upgrade) {

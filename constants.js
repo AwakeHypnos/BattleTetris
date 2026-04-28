@@ -1,7 +1,7 @@
 // 游戏常量定义
 const CONSTANTS = {
     // 游戏区域尺寸
-    GRID_WIDTH: 10,
+    GRID_WIDTH: 12,
     GRID_HEIGHT: 20,
     CELL_SIZE: 30,
     
@@ -198,7 +198,17 @@ const CONSTANTS = {
         waveBaseCount: 15,
         waveIncrementCount: 8,
         maxSpawnPerBatch: 20,
-        maxEnemiesOnScreen: 50
+        maxEnemiesOnScreen: 200,
+        criticalEnemyCount: 100,
+        criticalHpMultiplier: 1.5,
+        criticalDefenseMultiplier: 2.0,
+        waveGapSeconds: 8,
+        wave1Count: 15,
+        wave2Count: 18,
+        wave3Count: 15,
+        wave4Count: 12,
+        wave5BaseCount: 20,
+        wave5IncrementPerWave: 10
     },
     
     // 敌人难度曲线 - 1分钟后加快增长，无上限
@@ -262,5 +272,53 @@ const CONSTANTS = {
     // 暂停菜单
     PAUSE_MENU: {
         OPTIONS: ['继续游戏', '读取存档', '保存存档', '返回主菜单', '退出游戏']
+    },
+    
+    // 技能系统常量
+    SKILLS: {
+        FULL_SCREEN_BOMB: {
+            name: '全屏轰炸',
+            description: '连击数达到5及以上，对所有敌人造成高额AOE伤害',
+            comboRequirement: 5,
+            baseDamage: 100,
+            color: '#e94560'
+        },
+        TURRET_OVERLOAD: {
+            name: '炮塔超载',
+            description: '消耗8个及以上的同色消除，所有炮塔攻速变为1.5倍，持续3秒',
+            sameColorRequirement: 8,
+            attackSpeedMultiplier: 1.5,
+            duration: 3000,
+            color: '#ff8c00'
+        },
+        EMERGENCY_REPAIR: {
+            name: '紧急修复',
+            description: '消耗5个及以上绿色消除，城堡血量回满',
+            greenRequirement: 5,
+            color: '#4ecca3'
+        }
+    },
+    
+    // 方块献祭系统常量
+    SACRIFICE: {
+        REFRESH_BOARD: {
+            name: '刷新布局',
+            description: '随机刷新场上方块布局',
+            blockCount: 5,
+            color: '#00d9ff'
+        },
+        TEMP_SHIELD: {
+            name: '临时护盾',
+            description: '给城堡加一层临时护盾',
+            blockCount: 10,
+            shieldAmount: 50,
+            color: '#a66cff'
+        },
+        DOUBLE_EFFECT: {
+            name: '效果翻倍',
+            description: '下一次消除效果翻倍',
+            blockCount: 15,
+            color: '#f9ed69'
+        }
     }
 };
