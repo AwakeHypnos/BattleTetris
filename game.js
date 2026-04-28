@@ -127,6 +127,7 @@ class BattleTetrisGame {
     initEventListeners() {
         document.getElementById('startBtn').addEventListener('click', () => this.startGame());
         document.getElementById('pauseBtn').addEventListener('click', () => this.togglePause());
+        document.getElementById('sacrificeBtn').addEventListener('click', () => this.showSacrificeMenu());
         document.getElementById('saveBtn').addEventListener('click', () => this.saveGame());
         document.getElementById('loadBtn').addEventListener('click', () => this.loadGame());
         document.getElementById('restartBtn').addEventListener('click', () => this.restartGame());
@@ -683,25 +684,35 @@ class BattleTetrisGame {
         }
     }
     
-    calculateTotalScore() {
+    getCurrentScore() {
+        return this.defenseSystem.defenseScore + this.tetrisScore;
+    }
+    
+    calculateFinalScore() {
         if (this.survivalTime < 1) {
             return 0;
         }
         
         const gameMinutes = Math.max(1, Math.floor(this.survivalTime / 60));
         const wallHPBonus = Math.max(0, this.defenseSystem.wallHP) * CONSTANTS.SCORING.WALL_HP_BONUS;
+        const comboBonus = this.maxCombo * CONSTANTS.SCORING.COMBO_BONUS;
+        const killBonus = this.defenseSystem.killCount * CONSTANTS.SCORING.KILL_BONUS;
+        const levelBonus = this.level * CONSTANTS.SCORING.LEVEL_BONUS;
         
         this.totalScore = Math.floor(
             this.defenseSystem.defenseScore +
             this.tetrisScore * gameMinutes +
-            wallHPBonus
+            wallHPBonus +
+            comboBonus +
+            killBonus +
+            levelBonus
         );
         
         return this.totalScore;
     }
     
     getRating() {
-        const score = this.calculateTotalScore();
+        const score = this.calculateFinalScore();
         
         if (score >= CONSTANTS.RATINGS.S.minScore) return CONSTANTS.RATINGS.S;
         if (score >= CONSTANTS.RATINGS.A.minScore) return CONSTANTS.RATINGS.A;
@@ -713,7 +724,7 @@ class BattleTetrisGame {
     updateUI() {
         if (this.ui.tetrisScore) this.ui.tetrisScore.textContent = Utils.formatScore(this.tetrisScore);
         if (this.ui.defenseScore) this.ui.defenseScore.textContent = Utils.formatScore(this.defenseSystem.defenseScore);
-        if (this.ui.totalScore) this.ui.totalScore.textContent = Utils.formatScore(this.calculateTotalScore());
+        if (this.ui.totalScore) this.ui.totalScore.textContent = Utils.formatScore(this.getCurrentScore());
         if (this.ui.level) this.ui.level.textContent = this.level;
         if (this.ui.combo) this.ui.combo.textContent = this.combo;
         
@@ -1060,6 +1071,7 @@ class BattleTetrisGame {
             this.showPauseMenu();
         } else {
             this.hidePauseMenu();
+            this.lastFrameTime = performance.now();
             this.startDropTimer();
             this.animationId = requestAnimationFrame((t) => this.gameLoop(t));
         }
@@ -1071,6 +1083,7 @@ class BattleTetrisGame {
         this.hidePauseMenu();
         this.isPaused = false;
         document.getElementById('pauseBtn').textContent = '暂停';
+        this.lastFrameTime = performance.now();
         this.startDropTimer();
         this.animationId = requestAnimationFrame((t) => this.gameLoop(t));
     }
@@ -1146,11 +1159,6 @@ class BattleTetrisGame {
     }
     
     showSacrificeMenu() {
-        if (this.currentPiece) {
-            this.showSkillNotification('请先放置当前方块！', '#ff8c00');
-            return;
-        }
-        
         this.sacrificeMode = true;
         this.sacrificeFromPause = false;
         this.isPaused = true;
@@ -1160,11 +1168,6 @@ class BattleTetrisGame {
     }
     
     showSacrificeMenuFromPause() {
-        if (this.currentPiece) {
-            this.showSkillNotification('请先放置当前方块！', '#ff8c00');
-            return;
-        }
-        
         this.sacrificeMode = true;
         this.sacrificeFromPause = true;
         
@@ -1237,6 +1240,7 @@ class BattleTetrisGame {
             if (this.isStarted && !this.gameOver && !this.tetrisEnded) {
                 this.isPaused = false;
                 document.getElementById('pauseBtn').textContent = '暂停';
+                this.lastFrameTime = performance.now();
                 this.startDropTimer();
                 this.animationId = requestAnimationFrame((t) => this.gameLoop(t));
             }
@@ -1440,6 +1444,8 @@ class BattleTetrisGame {
         this.isInUpgradeMenu = false;
         this.isPaused = false;
         
+        this.lastFrameTime = performance.now();
+        
         this.updateWeaponProgressUI();
         
         if (!this.tetrisEnded) {
@@ -1469,7 +1475,7 @@ class BattleTetrisGame {
         this.isInGameOverMenu = true;
         
         const rating = this.getRating();
-        const totalScore = this.calculateTotalScore();
+        const totalScore = this.calculateFinalScore();
         
         document.getElementById('ratingDisplay').textContent = rating.name;
         document.getElementById('ratingDisplay').style.color = rating.color;
