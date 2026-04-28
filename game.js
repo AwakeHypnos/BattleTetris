@@ -135,6 +135,8 @@ class BattleTetrisGame {
         document.getElementById('speed2x').addEventListener('click', () => this.setSpeedBoost(2.0));
         document.getElementById('speedNoBoost').addEventListener('click', () => this.setSpeedBoost(1.0));
         
+        document.getElementById('speedToggleBtn').addEventListener('click', () => this.toggleSpeedBoost());
+        
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
     }
     
@@ -302,7 +304,21 @@ class BattleTetrisGame {
         this.currentPiece = null;
         this.stopDropTimer();
         
-        this.showSpeedBoostMenu();
+        this.showSpeedControl();
+    }
+    
+    showSpeedControl() {
+        const speedControl = document.getElementById('speedControl');
+        if (speedControl) {
+            speedControl.classList.remove('hidden');
+        }
+    }
+    
+    hideSpeedControl() {
+        const speedControl = document.getElementById('speedControl');
+        if (speedControl) {
+            speedControl.classList.add('hidden');
+        }
     }
     
     showSpeedBoostMenu() {
@@ -316,9 +332,41 @@ class BattleTetrisGame {
     
     setSpeedBoost(multiplier) {
         this.defenseSystem.speedMultiplier = multiplier;
+        this.updateSpeedButtonDisplay(multiplier);
         this.hideSpeedBoostMenu();
         this.isPaused = false;
         this.animationId = requestAnimationFrame((t) => this.gameLoop(t));
+    }
+    
+    toggleSpeedBoost() {
+        const currentSpeed = this.defenseSystem.speedMultiplier || 1.0;
+        let newSpeed;
+        
+        if (currentSpeed === 1.0) {
+            newSpeed = 1.5;
+        } else if (currentSpeed === 1.5) {
+            newSpeed = 2.0;
+        } else {
+            newSpeed = 1.0;
+        }
+        
+        this.defenseSystem.speedMultiplier = newSpeed;
+        this.updateSpeedButtonDisplay(newSpeed);
+    }
+    
+    updateSpeedButtonDisplay(multiplier) {
+        const btn = document.getElementById('speedToggleBtn');
+        if (btn) {
+            if (multiplier === 1.0) {
+                btn.textContent = '1x';
+            } else if (multiplier === 1.5) {
+                btn.textContent = '1.5x';
+            } else if (multiplier === 2.0) {
+                btn.textContent = '2x';
+            } else {
+                btn.textContent = `${multiplier}x`;
+            }
+        }
     }
     
     spawnNewPiece() {
@@ -576,7 +624,9 @@ class BattleTetrisGame {
     
     updateWeaponProgressUI() {
         const weaponTypes = ['FIRE', 'PIERCE', 'ICE', 'POISON', 'SPACE', 'SHOTGUN'];
-        const threshold = CONSTANTS.UPGRADE_SYSTEM.SCORE_THRESHOLD;
+        const threshold = this.defenseSystem.getCurrentUpgradeThreshold 
+            ? this.defenseSystem.getCurrentUpgradeThreshold() 
+            : CONSTANTS.UPGRADE_SYSTEM.SCORE_THRESHOLD;
         
         weaponTypes.forEach(type => {
             const isUnlocked = this.defenseSystem.weaponUnlockStates[type];
@@ -778,6 +828,8 @@ class BattleTetrisGame {
         
         this.defenseSystem.reset();
         this.defenseSystem.start();
+        
+        this.hideSpeedControl();
         
         this.spawnNewPiece();
         this.startDropTimer();

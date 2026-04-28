@@ -3,7 +3,7 @@
 // ============================================
 
 class Enemy {
-    constructor(x, y, type = 'NORMAL', difficultyMultiplier = 1) {
+    constructor(x, y, type = 'NORMAL', difficultyMultiplier = 1, defense = 0) {
         this.x = x;
         this.y = y;
         this.type = type;
@@ -18,6 +18,8 @@ class Enemy {
         this.size = CONSTANTS.ENEMY.size;
         this.damageToWall = typeConfig.damageToWall || CONSTANTS.WALL.damagePerEnemy;
         
+        this.defense = Math.min(defense, 90);
+        
         this.isFrozen = false;
         this.frozenUntil = 0;
         this.isSlowed = false;
@@ -31,9 +33,16 @@ class Enemy {
         
         this.isElite = type === 'ELITE';
         this.isTank = type === 'TANK';
+        
+        this.knockbackPaused = false;
+        this.knockbackResumeTime = 0;
     }
     
     update(currentTime, speedMultiplier = 1.0) {
+        if (this.knockbackPaused && currentTime >= this.knockbackResumeTime) {
+            this.knockbackPaused = false;
+        }
+        
         if (this.isFrozen && currentTime >= this.frozenUntil) {
             this.isFrozen = false;
         }
@@ -52,7 +61,7 @@ class Enemy {
             }
         }
         
-        if (!this.isFrozen) {
+        if (!this.isFrozen && !this.knockbackPaused) {
             this.y += this.speed * speedMultiplier;
         }
     }
@@ -74,8 +83,19 @@ class Enemy {
     }
     
     takeDamage(damage) {
-        this.currentHP -= damage;
+        const actualDamage = Math.max(1, damage * (1 - this.defense / 100));
+        this.currentHP -= actualDamage;
         return this.currentHP <= 0;
+    }
+    
+    applyKnockback(distance = 10, pauseDuration = 200) {
+        if (this.isTank) return false;
+        
+        this.y = Math.max(-50, this.y - distance);
+        this.knockbackPaused = true;
+        this.knockbackResumeTime = performance.now() + pauseDuration;
+        
+        return true;
     }
     
     draw(ctx) {

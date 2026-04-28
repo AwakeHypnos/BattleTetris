@@ -58,6 +58,10 @@
                 <button id="loadBtn">读档</button>
                 <button id="restartBtn">重新开始</button>
             </div>
+            <div class="speed-control hidden" id="speedControl">
+                <span class="speed-label">塔防加速:</span>
+                <button class="speed-control-btn" id="speedToggleBtn">1x</button>
+            </div>
             <div class="game-hint">
                 <p>操作: ←→移动 | ↑旋转 | ↓加速 | 空格硬降 | ESC暂停</p>
             </div>
@@ -70,11 +74,34 @@
             <h2>游戏暂停</h2>
             <div class="menu-options">
                 <button class="menu-btn" id="resumeBtn">继续游戏</button>
+                <button class="menu-btn" id="showUpgradesBtn">查看已解锁效果</button>
                 <button class="menu-btn" id="loadMenuBtn">读取存档</button>
                 <button class="menu-btn" id="saveMenuBtn">保存存档</button>
                 <button class="menu-btn" id="mainMenuBtn">返回主菜单</button>
                 <button class="menu-btn" id="exitBtn">退出游戏</button>
             </div>
+        </div>
+    </div>
+    
+    <!-- 已解锁效果查看覆盖层 -->
+    <div id="unlockedUpgradesOverlay" class="overlay hidden">
+        <div class="unlocked-upgrades-menu">
+            <h2>已解锁效果</h2>
+            <div class="upgrades-display-section">
+                <div class="upgrades-category">
+                    <h3>已解锁炮塔</h3>
+                    <div class="unlocked-turrets" id="unlockedTurretsList">
+                        <p class="no-upgrades">暂无已解锁炮塔</p>
+                    </div>
+                </div>
+                <div class="upgrades-category">
+                    <h3>已解锁效果</h3>
+                    <div class="unlocked-effects" id="unlockedEffectsList">
+                        <p class="no-upgrades">暂无已解锁效果</p>
+                    </div>
+                </div>
+            </div>
+            <button class="close-upgrades-btn" id="closeUpgradesBtn">返回</button>
         </div>
     </div>
     

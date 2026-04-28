@@ -184,7 +184,8 @@ class DefenseSystem {
         
         this.weaponPoints[weaponType] += adjustedPoints;
         
-        const threshold = CONSTANTS.UPGRADE_SYSTEM.SCORE_THRESHOLD;
+        const elapsedMinutes = (performance.now() - this.gameStartTime) / 60000;
+        const threshold = this.calculateUpgradeThreshold(Math.max(0, elapsedMinutes));
         
         if (this.weaponPoints[weaponType] >= threshold && !this.isUpgradePending) {
             this.weaponPoints[weaponType] -= threshold;
@@ -205,6 +206,11 @@ class DefenseSystem {
         }
         
         return null;
+    }
+    
+    getCurrentUpgradeThreshold() {
+        const elapsedMinutes = (performance.now() - this.gameStartTime) / 60000;
+        return this.calculateUpgradeThreshold(Math.max(0, elapsedMinutes));
     }
     
     selectUpgrade(optionIndex) {
@@ -275,6 +281,8 @@ class DefenseSystem {
             const acceleratedHp = acceleratedPeriods * (config.acceleratedHpIncreasePer30Seconds / 100);
             hpMultiplier = 1 + baseHp + acceleratedHp;
             
+            hpMultiplier = 1 + (hpMultiplier - 1) * (config.acceleratedHpMultiplierAfter60Seconds || 2.5);
+            
             const baseMinutes = accelerationTime / 60;
             const acceleratedMinutes = acceleratedSeconds / 60;
             const baseSpeed = baseMinutes * config.baseSpeedIncreasePerMinute;
@@ -288,7 +296,28 @@ class DefenseSystem {
         };
     }
     
+    calculateEnemyDefense(elapsedMinutes) {
+        const defense = Math.exp(elapsedMinutes) - 1;
+        return Math.min(defense, 90);
+    }
+    
+    calculateUpgradeThreshold(elapsedMinutes) {
+        const baseThreshold = CONSTANTS.UPGRADE_SYSTEM.SCORE_THRESHOLD;
+        const timeMultiplier = Math.pow(1.5, elapsedMinutes);
+        return Math.floor(baseThreshold * Math.min(timeMultiplier, 10));
+    }
+    
     spawnEnemy(count = 1, difficultyMultiplier = 1) {
+        const maxSpawnPerBatch = CONSTANTS.ENEMY_SPAWN.maxSpawnPerBatch || 20;
+        const maxEnemiesOnScreen = CONSTANTS.ENEMY_SPAWN.maxEnemiesOnScreen || 50;
+        
+        const currentEnemyCount = this.enemies.length;
+        const availableSlots = maxEnemiesOnScreen - currentEnemyCount;
+        
+        if (availableSlots <= 0) return;
+        
+        const actualCount = Math.min(count, maxSpawnPerBatch, availableSlots);
+        
         const types = ['NORMAL', 'NORMAL', 'NORMAL', 'FAST', 'TANK'];
         
         const elapsedMinutes = (performance.now() - this.gameStartTime) / 60000;
@@ -296,12 +325,14 @@ class DefenseSystem {
             types.push('ELITE');
         }
         
-        for (let i = 0; i < count; i++) {
+        const defense = this.calculateEnemyDefense(elapsedMinutes);
+        
+        for (let i = 0; i < actualCount; i++) {
             const type = Utils.randomChoice(types);
             const x = Utils.randomInt(30, this.canvas.width - 30);
             const y = -40 - Math.random() * 60;
             
-            const enemy = new Enemy(x, y, type, difficultyMultiplier);
+            const enemy = new Enemy(x, y, type, difficultyMultiplier, defense);
             this.enemies.push(enemy);
         }
     }
@@ -336,7 +367,8 @@ class DefenseSystem {
             this.lastWaveTime = elapsedMinutes;
         }
         
-        if (currentTime - this.lastSpawnTime >= effectiveSpawnInterval) {
+        const maxEnemiesOnScreen = CONSTANTS.ENEMY_SPAWN.maxEnemiesOnScreen || 50;
+        if (currentTime - this.lastSpawnTime >= effectiveSpawnInterval && this.enemies.length < maxEnemiesOnScreen) {
             const extraCount = Math.floor(elapsedSeconds / 30) * CONSTANTS.ENEMY_SPAWN.extraCountPer30Seconds;
             const baseCount = CONSTANTS.ENEMY_SPAWN.baseCount + extraCount;
             const totalCount = Math.ceil(baseCount * this.speedMultiplier);
