@@ -566,7 +566,7 @@ class DefenseSystem {
                 const waveElapsed = elapsedSeconds - this.waveStartTime;
                 if (waveElapsed >= config.duration || (this.enemies.length === 0 && waveElapsed >= 5)) {
                     this.waveState = 'inactive';
-                    if (this.currentWave < 4) {
+                    if (this.currentWave <= 4) {
                         this.currentWave++;
                     }
                 }

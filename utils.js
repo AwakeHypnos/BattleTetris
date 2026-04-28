@@ -105,5 +105,18 @@ const Utils = {
         
         const requiredFields = ['grid', 'score', 'level', 'combo', 'gameOver'];
         return requiredFields.every(field => gameState.hasOwnProperty(field));
+    },
+    
+    /**
+     * Fisher-Yates 洗牌算法，随机打乱数组
+     * @param {Array} arr - 要打乱的数组
+     * @returns {Array} 打乱后的数组（修改原数组）
+     */
+    shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
     }
 };
