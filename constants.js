@@ -1,7 +1,7 @@
 // 游戏常量定义
 const CONSTANTS = {
     // 游戏区域尺寸
-    GRID_WIDTH: 12,
+    GRID_WIDTH: 16,
     GRID_HEIGHT: 20,
     CELL_SIZE: 30,
     

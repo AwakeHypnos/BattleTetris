@@ -13,6 +13,11 @@
         <div class="defense-panel">
             <div class="defense-header">
                 <h2>城堡防御</h2>
+                <div class="wave-info">
+                    <span class="wave-label">波次:</span>
+                    <span class="wave-number" id="waveNumber">1</span>
+                    <span class="wave-state" id="waveState">准备中</span>
+                </div>
                 <div class="wall-hp-container">
                     <div class="wall-hp-label">城墙血量</div>
                     <div class="wall-hp-bar">
@@ -74,11 +79,26 @@
             <h2>游戏暂停</h2>
             <div class="menu-options">
                 <button class="menu-btn" id="resumeBtn">继续游戏</button>
+                <button class="menu-btn" id="sacrificeFromPauseBtn">方块献祭</button>
                 <button class="menu-btn" id="showUpgradesBtn">查看已解锁效果</button>
                 <button class="menu-btn" id="loadMenuBtn">读取存档</button>
                 <button class="menu-btn" id="saveMenuBtn">保存存档</button>
                 <button class="menu-btn" id="mainMenuBtn">返回主菜单</button>
                 <button class="menu-btn" id="exitBtn">退出游戏</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 方块献祭菜单 -->
+    <div id="sacrificeOverlay" class="overlay hidden">
+        <div class="sacrifice-menu">
+            <h2>方块献祭</h2>
+            <p class="sacrifice-subtitle">消耗场上方块换取临时增益</p>
+            <p class="sacrifice-subtitle" id="sacrificeBlockCount">当前场上方块数：0</p>
+            <div class="sacrifice-options-container" id="sacrificeOptionsContainer">
+            </div>
+            <div class="sacrifice-buttons">
+                <button class="sacrifice-btn secondary" id="cancelSacrifice">取消</button>
             </div>
         </div>
     </div>
