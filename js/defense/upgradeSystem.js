@@ -464,9 +464,13 @@ class UpgradeSystem {
         this.overcharge.attackCount = 0;
     }
     
-    applyKnockback(enemy, distance = 20) {
+    applyKnockback(enemy, distance = 10, pauseDuration = 200) {
         if (!this.knockbackEnabled) return false;
         if (enemy.isElite || enemy.isTank) return false;
+        
+        if (enemy.applyKnockback) {
+            return enemy.applyKnockback(distance, pauseDuration);
+        }
         
         enemy.y = Math.max(-50, enemy.y - distance);
         return true;

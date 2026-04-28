@@ -196,7 +196,9 @@ const CONSTANTS = {
         extraCountPer30Seconds: 2,
         waveIntervalMinutes: 3,
         waveBaseCount: 15,
-        waveIncrementCount: 8
+        waveIncrementCount: 8,
+        maxSpawnPerBatch: 20,
+        maxEnemiesOnScreen: 50
     },
     
     // 敌人难度曲线 - 1分钟后加快增长，无上限
@@ -206,7 +208,8 @@ const CONSTANTS = {
         baseSpeedIncreasePerMinute: 0.015,
         acceleratedSpeedIncreasePerMinute: 0.04,
         accelerationStartTime: 60,
-        maxSpeedMultiplier: null
+        maxSpeedMultiplier: null,
+        acceleratedHpMultiplierAfter60Seconds: 2.5
     },
     
     // 敌人类型
