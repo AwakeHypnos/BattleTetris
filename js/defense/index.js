@@ -538,10 +538,10 @@ class DefenseSystem {
         }
         
         if (elapsedSeconds >= 75 && elapsedSeconds < 80) {
-            if (this.waveState !== 'paused') {
+            if (this.currentWave >= 5 && this.waveState === 'inactive') {
                 this.waveState = 'paused';
+                return;
             }
-            return;
         }
         
         const config = this.getWaveConfig(this.currentWave, elapsedSeconds);
