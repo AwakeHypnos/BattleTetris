@@ -650,6 +650,214 @@ button:disabled {
     color: #ccc;
 }
 
+/* 流派颜色边框样式 */
+.buff-option-card.faction-fire {
+    border-color: #e94560;
+    box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
+}
+
+.buff-option-card.faction-fire:hover {
+    box-shadow: 0 15px 40px rgba(233, 69, 96, 0.5), 0 0 30px rgba(233, 69, 96, 0.4);
+}
+
+.buff-option-card.faction-fire .buff-name {
+    color: #e94560;
+}
+
+.buff-option-card.faction-fire .buff-category {
+    color: #ff6b7a;
+}
+
+.buff-option-card.faction-lightning {
+    border-color: #f9ed69;
+    box-shadow: 0 0 15px rgba(249, 237, 105, 0.3);
+}
+
+.buff-option-card.faction-lightning:hover {
+    box-shadow: 0 15px 40px rgba(249, 237, 105, 0.5), 0 0 30px rgba(249, 237, 105, 0.4);
+}
+
+.buff-option-card.faction-lightning .buff-name {
+    color: #f9ed69;
+}
+
+.buff-option-card.faction-lightning .buff-category {
+    color: #fff5a5;
+}
+
+.buff-option-card.faction-ice {
+    border-color: #00d9ff;
+    box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
+}
+
+.buff-option-card.faction-ice:hover {
+    box-shadow: 0 15px 40px rgba(0, 217, 255, 0.5), 0 0 30px rgba(0, 217, 255, 0.4);
+}
+
+.buff-option-card.faction-ice .buff-name {
+    color: #00d9ff;
+}
+
+.buff-option-card.faction-ice .buff-category {
+    color: #0f3460;
+}
+
+.buff-option-card.faction-pierce {
+    border-color: #ff8c00;
+    box-shadow: 0 0 15px rgba(255, 140, 0, 0.3);
+}
+
+.buff-option-card.faction-pierce:hover {
+    box-shadow: 0 15px 40px rgba(255, 140, 0, 0.5), 0 0 30px rgba(255, 140, 0, 0.4);
+}
+
+.buff-option-card.faction-pierce .buff-name {
+    color: #ff8c00;
+}
+
+.buff-option-card.faction-pierce .buff-category {
+    color: #ffaa4d;
+}
+
+.buff-option-card.faction-space {
+    border-color: #a66cff;
+    box-shadow: 0 0 15px rgba(166, 108, 255, 0.3);
+}
+
+.buff-option-card.faction-space:hover {
+    box-shadow: 0 15px 40px rgba(166, 108, 255, 0.5), 0 0 30px rgba(166, 108, 255, 0.4);
+}
+
+.buff-option-card.faction-space .buff-name {
+    color: #a66cff;
+}
+
+.buff-option-card.faction-space .buff-category {
+    color: #c9a6ff;
+}
+
+.buff-option-card.faction-poison {
+    border-color: #4ecca3;
+    box-shadow: 0 0 15px rgba(78, 204, 163, 0.3);
+}
+
+.buff-option-card.faction-poison:hover {
+    box-shadow: 0 15px 40px rgba(78, 204, 163, 0.5), 0 0 30px rgba(78, 204, 163, 0.4);
+}
+
+.buff-option-card.faction-poison .buff-name {
+    color: #4ecca3;
+}
+
+.buff-option-card.faction-poison .buff-category {
+    color: #7ee8c7;
+}
+
+.buff-option-card.faction-general {
+    border-color: #888;
+    box-shadow: 0 0 15px rgba(136, 136, 136, 0.3);
+}
+
+.buff-option-card.faction-general:hover {
+    box-shadow: 0 15px 40px rgba(136, 136, 136, 0.5), 0 0 30px rgba(136, 136, 136, 0.4);
+}
+
+.buff-option-card.faction-general .buff-name {
+    color: #fff;
+}
+
+.buff-option-card.faction-general .buff-category {
+    color: #aaa;
+}
+
+/* 流派图标 */
+.faction-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    position: relative;
+}
+
+.faction-icon::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border-radius: 50%;
+    border: 2px solid;
+    opacity: 0.5;
+}
+
+.faction-icon.fire {
+    background: linear-gradient(135deg, #e94560, #ff6b7a);
+    box-shadow: 0 0 20px rgba(233, 69, 96, 0.6);
+}
+
+.faction-icon.fire::after {
+    border-color: #ff6b7a;
+}
+
+.faction-icon.lightning {
+    background: linear-gradient(135deg, #f9ed69, #fff5a5);
+    box-shadow: 0 0 20px rgba(249, 237, 105, 0.6);
+}
+
+.faction-icon.lightning::after {
+    border-color: #fff5a5;
+}
+
+.faction-icon.ice {
+    background: linear-gradient(135deg, #0f3460, #00d9ff);
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.6);
+}
+
+.faction-icon.ice::after {
+    border-color: #00d9ff;
+}
+
+.faction-icon.pierce {
+    background: linear-gradient(135deg, #ff8c00, #ffaa4d);
+    box-shadow: 0 0 20px rgba(255, 140, 0, 0.6);
+}
+
+.faction-icon.pierce::after {
+    border-color: #ffaa4d;
+}
+
+.faction-icon.space {
+    background: linear-gradient(135deg, #a66cff, #c9a6ff);
+    box-shadow: 0 0 20px rgba(166, 108, 255, 0.6);
+}
+
+.faction-icon.space::after {
+    border-color: #c9a6ff;
+}
+
+.faction-icon.poison {
+    background: linear-gradient(135deg, #4ecca3, #7ee8c7);
+    box-shadow: 0 0 20px rgba(78, 204, 163, 0.6);
+}
+
+.faction-icon.poison::after {
+    border-color: #7ee8c7;
+}
+
+.faction-icon.general {
+    background: linear-gradient(135deg, #666, #888);
+    box-shadow: 0 0 20px rgba(136, 136, 136, 0.6);
+}
+
+.faction-icon.general::after {
+    border-color: #888;
+}
+
 /* 游戏结束菜单 */
 .game-over-menu {
     background: linear-gradient(135deg, #16213e, #0f3460);

@@ -625,6 +625,8 @@ class BattleTetrisGame {
         if (greenCount >= CONSTANTS.SKILLS.EMERGENCY_REPAIR.greenRequirement) {
             this.triggerEmergencyRepair();
         }
+        
+        this.checkFactionClearEffects(clearedColors, effectMultiplier);
     }
     
     triggerFullScreenBomb(effectMultiplier) {
@@ -655,6 +657,156 @@ class BattleTetrisGame {
         this.defenseSystem.wallHP = this.defenseSystem.maxWallHP;
         
         this.showSkillNotification('紧急修复！', CONSTANTS.SKILLS.EMERGENCY_REPAIR.color);
+    }
+    
+    checkFactionClearEffects(clearedColors, effectMultiplier) {
+        const upgradeSystem = this.defenseSystem.upgradeSystem;
+        if (!upgradeSystem) return;
+        
+        clearedColors.forEach((count, color) => {
+            const clearBonus = upgradeSystem.getColorClearBonus(color);
+            if (!clearBonus || !clearBonus.enabled) return;
+            
+            switch (color) {
+                case 'RED':
+                    this.triggerRedClearEffect(clearBonus, count, effectMultiplier);
+                    break;
+                case 'YELLOW':
+                    this.triggerYellowClearEffect(clearBonus, count, effectMultiplier);
+                    break;
+                case 'BLUE':
+                    this.triggerBlueClearEffect(clearBonus, count, effectMultiplier);
+                    break;
+                case 'ORANGE':
+                    this.triggerOrangeClearEffect(clearBonus, count, effectMultiplier);
+                    break;
+                case 'PURPLE':
+                    this.triggerPurpleClearEffect(clearBonus, count, effectMultiplier);
+                    break;
+                case 'GREEN':
+                    this.triggerGreenClearEffect(clearBonus, count, effectMultiplier);
+                    break;
+            }
+        });
+    }
+    
+    triggerRedClearEffect(clearBonus, count, effectMultiplier) {
+        if (!clearBonus.extraDamage || clearBonus.extraDamage <= 0) return;
+        
+        const baseTurretDamage = 10;
+        const extraDamage = baseTurretDamage * clearBonus.extraDamage * count * effectMultiplier;
+        
+        this.defenseSystem.enemies.forEach(enemy => {
+            enemy.takeDamage(extraDamage);
+        });
+        
+        if (this.defenseSystem.enemies.length > 0) {
+            this.showSkillNotification('火焰爆发！', '#e94560');
+        }
+    }
+    
+    triggerYellowClearEffect(clearBonus, count, effectMultiplier) {
+        if (!clearBonus.rangeBoost || clearBonus.rangeBoost <= 0) return;
+        
+        this.temporaryRangeBoost = clearBonus.rangeBoost * effectMultiplier;
+        this.temporaryRangeBoostEndTime = performance.now() + 5000;
+        
+        this.defenseSystem.turrets.forEach(turret => {
+            if (!turret.originalRange) {
+                turret.originalRange = turret.range || turret.config.range;
+            }
+            turret.range = turret.originalRange * (1 + this.temporaryRangeBoost);
+        });
+        
+        this.showSkillNotification('范围扩展！', '#f9ed69');
+    }
+    
+    triggerBlueClearEffect(clearBonus, count, effectMultiplier) {
+        if (!clearBonus.freezeOnClear) return;
+        
+        const freezeCount = Math.min(2 + Math.floor(count / 4), this.defenseSystem.enemies.length);
+        if (freezeCount <= 0) return;
+        
+        const sortedEnemies = [...this.defenseSystem.enemies]
+            .sort((a, b) => b.y - a.y);
+        
+        const frozenEnemies = sortedEnemies.slice(0, freezeCount);
+        
+        frozenEnemies.forEach(enemy => {
+            const freezeDuration = 2000 * effectMultiplier;
+            const slowPercent = 0.7;
+            enemy.applyFreeze(freezeDuration, slowPercent);
+        });
+        
+        this.showSkillNotification('冰冻冲击！', '#00d9ff');
+    }
+    
+    triggerOrangeClearEffect(clearBonus, count, effectMultiplier) {
+        if (!clearBonus.ignoreArmor) return;
+        
+        this.ignoreArmorAttacksRemaining = 3;
+        
+        this.defenseSystem.turrets.forEach(turret => {
+            turret.ignoreArmorNextAttacks = 3;
+        });
+        
+        this.showSkillNotification('穿甲准备！', '#ff8c00');
+    }
+    
+    triggerPurpleClearEffect(clearBonus, count, effectMultiplier) {
+        if (!clearBonus.blockOnClear) return;
+        
+        const averageEnemyY = this.defenseSystem.enemies.length > 0 
+            ? this.defenseSystem.enemies.reduce((sum, e) => sum + e.y, 0) / this.defenseSystem.enemies.length
+            : 300;
+        
+        const blockY = Math.max(100, Math.min(averageEnemyY + 50, 500));
+        const lineWidth = this.defenseSystem.canvas.width;
+        const lineDuration = 3000 * effectMultiplier;
+        const lineDamage = 5;
+        const blockCount = 3 + Math.floor(count / 4);
+        
+        const SpaceLineClass = typeof SpaceLine !== 'undefined' ? SpaceLine : null;
+        if (SpaceLineClass && this.defenseSystem.spaceLines) {
+            const spaceLine = new SpaceLineClass(
+                blockY,
+                lineWidth,
+                lineDuration,
+                lineDamage,
+                0,
+                blockCount
+            );
+            this.defenseSystem.spaceLines.push(spaceLine);
+            this.showSkillNotification('空间阻拦！', '#a66cff');
+        }
+    }
+    
+    triggerGreenClearEffect(clearBonus, count, effectMultiplier) {
+        if (!clearBonus.aoeDebuffOnClear) return;
+        
+        const centerX = this.defenseSystem.canvas.width / 2;
+        const centerY = 300;
+        const aoeRadius = 200;
+        
+        this.defenseSystem.enemies.forEach(enemy => {
+            const dx = enemy.x - centerX;
+            const dy = enemy.y - centerY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist <= aoeRadius) {
+                const poisonDamage = 3 * effectMultiplier;
+                const poisonDuration = 5000 * effectMultiplier;
+                enemy.applyPoison(poisonDamage, poisonDuration);
+                
+                const slowDuration = 3000 * effectMultiplier;
+                const slowPercent = 0.4;
+                enemy.applyFreeze(slowDuration, slowPercent);
+            }
+        });
+        
+        if (this.defenseSystem.enemies.length > 0) {
+            this.showSkillNotification('毒液扩散！', '#4ecca3');
+        }
     }
     
     showSkillNotification(message, color) {
@@ -1750,6 +1902,45 @@ class BattleTetrisGame {
         this.animationId = requestAnimationFrame((t) => this.gameLoop(t));
     }
     
+    getFactionClassFromId(factionId) {
+        const factionMap = {
+            'FIRE': 'faction-fire',
+            'SHOTGUN': 'faction-lightning',
+            'ICE': 'faction-ice',
+            'PIERCE': 'faction-pierce',
+            'SPACE': 'faction-space',
+            'POISON': 'faction-poison',
+            'GENERAL': 'faction-general'
+        };
+        return factionMap[factionId] || 'faction-general';
+    }
+    
+    getFactionIconFromId(factionId) {
+        const iconMap = {
+            'FIRE': '🔥',
+            'SHOTGUN': '⚡',
+            'ICE': '❄️',
+            'PIERCE': '🎯',
+            'SPACE': '🌀',
+            'POISON': '☠️',
+            'GENERAL': '⭐'
+        };
+        return iconMap[factionId] || '⭐';
+    }
+    
+    getFactionIconClassFromId(factionId) {
+        const classMap = {
+            'FIRE': 'fire',
+            'SHOTGUN': 'lightning',
+            'ICE': 'ice',
+            'PIERCE': 'pierce',
+            'SPACE': 'space',
+            'POISON': 'poison',
+            'GENERAL': 'general'
+        };
+        return classMap[factionId] || 'general';
+    }
+    
     showBuffUpgradeMenu(upgrade) {
         this.isInUpgradeMenu = true;
         this.isPaused = true;
@@ -1763,24 +1954,31 @@ class BattleTetrisGame {
             const weaponName = CONSTANTS.WEAPON_NAMES[upgrade.triggerWeaponType];
             subtitle.innerHTML = `选择升级效果，并获得新炮塔：<span style="color: ${CONSTANTS.WEAPONS[upgrade.triggerWeaponType].color}">${weaponName}</span>`;
         } else if (subtitle) {
-            subtitle.innerHTML = '每50分解锁一次升级，选择一项永久加成';
+            subtitle.innerHTML = '选择一项流派升级，强化你的战斗风格';
         }
         
         const options = upgrade.options;
         
         options.forEach((option, index) => {
             const card = document.createElement('div');
-            card.className = 'buff-option-card';
-            card.style.borderColor = option.color;
-            card.style.boxShadow = `0 0 20px ${option.color}40`;
             
-            const categoryLabel = option.category === 'general' ? '通用' : 
-                (option.weaponType ? CONSTANTS.WEAPON_NAMES[option.weaponType] || '专属' : '专属');
-            const categoryColor = option.category === 'general' ? '#aaa' : option.color;
+            const factionId = option.factionId || 'GENERAL';
+            const factionClass = this.getFactionClassFromId(factionId);
+            const factionIcon = this.getFactionIconFromId(factionId);
+            const factionIconClass = this.getFactionIconClassFromId(factionId);
+            
+            card.className = `buff-option-card ${factionClass}`;
+            
+            const categoryLabel = option.factionName || 
+                (option.category === 'general' ? '通用' : 
+                (option.weaponType ? CONSTANTS.WEAPON_NAMES[option.weaponType] || '专属' : '专属'));
+            
+            const displayColor = option.color || '#4ecca3';
             
             card.innerHTML = `
-                <div class="buff-category" style="color: ${categoryColor}">${categoryLabel}</div>
-                <div class="buff-name" style="color: ${option.color}">${option.name}</div>
+                <div class="faction-icon ${factionIconClass}">${factionIcon}</div>
+                <div class="buff-category">${categoryLabel}</div>
+                <div class="buff-name">${option.name}</div>
                 <div class="buff-description">${option.description}</div>
             `;
             
