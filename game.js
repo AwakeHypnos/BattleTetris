@@ -694,15 +694,20 @@ class BattleTetrisGame {
         if (!clearBonus.extraDamage || clearBonus.extraDamage <= 0) return;
         
         const baseTurretDamage = 10;
-        const extraDamage = baseTurretDamage * clearBonus.extraDamage * count * effectMultiplier;
+        const extraDamage = baseTurretDamage * 0.20 * effectMultiplier;
         
-        this.defenseSystem.enemies.forEach(enemy => {
+        const enemies = this.defenseSystem.enemies;
+        if (enemies.length === 0) return;
+        
+        const shuffled = [...enemies].sort(() => Math.random() - 0.5);
+        const targetCount = Math.min(2, shuffled.length);
+        const targets = shuffled.slice(0, targetCount);
+        
+        targets.forEach(enemy => {
             enemy.takeDamage(extraDamage);
         });
         
-        if (this.defenseSystem.enemies.length > 0) {
-            this.showSkillNotification('火焰爆发！', '#e94560');
-        }
+        this.showSkillNotification('火焰爆发！', '#e94560');
     }
     
     triggerYellowClearEffect(clearBonus, count, effectMultiplier) {

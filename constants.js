@@ -84,7 +84,7 @@ const CONSTANTS = {
         ICE: '冰结弹炮台',
         POISON: '毒液弹炮台',
         SPACE: '空间弹炮台',
-        SHOTGUN: '散弹炮台'
+        SHOTGUN: '闪电炮台'
     },
     
     // 武器基础属性（数值平衡）
