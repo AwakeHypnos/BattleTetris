@@ -76,6 +76,24 @@ class DefenseSystem {
         this.waveEnemyCount = 0;
         this.waveKilledCount = 0;
         
+        this.isLevelMode = false;
+        this.currentLevel = 1;
+        this.levelConfig = null;
+        this.levelComplete = false;
+        this.levelFailed = false;
+        
+        this.levelWavesCompleted = 0;
+        this.levelTotalWaves = 0;
+        this.levelWaveSpawnCount = 0;
+        this.levelWaveKilledCount = 0;
+        
+        this.availableColors = [...CONSTANTS.BLOCK_COLORS];
+        this.availableWeapons = ['FIRE', 'PIERCE', 'ICE', 'POISON', 'SPACE', 'SHOTGUN'];
+        this.availableEnemies = ['NORMAL', 'FAST', 'TANK', 'ELITE'];
+        this.sacrificeEnabled = true;
+        
+        this.initialWeapon = 'FIRE';
+        
         this.initTurrets();
     }
     
@@ -92,7 +110,8 @@ class DefenseSystem {
         const slotWidth = this.canvas.width / (slotCount + 1);
         
         const centerX = slotWidth * Math.floor(slotCount / 2 + 1);
-        const turret = new Turret(centerX, wallY - 20, 'FIRE', 0);
+        const initialWeapon = this.initialWeapon || 'FIRE';
+        const turret = new Turret(centerX, wallY - 20, initialWeapon, 0);
         this.turrets.push(turret);
         
         this.availableSlots = [];
@@ -104,6 +123,56 @@ class DefenseSystem {
         }
         this.availableSlots.sort((a, b) => Math.abs(a.x - centerX) - Math.abs(b.x - centerX));
         this.slotIndex = 0;
+    }
+    
+    setLevel(levelNumber) {
+        this.isLevelMode = true;
+        this.currentLevel = levelNumber;
+        this.levelConfig = CONSTANTS.LEVELS[levelNumber];
+        
+        if (!this.levelConfig) {
+            this.isLevelMode = false;
+            return;
+        }
+        
+        this.availableColors = [...this.levelConfig.availableColors];
+        this.availableWeapons = [...this.levelConfig.availableWeapons];
+        this.availableEnemies = [...this.levelConfig.availableEnemies];
+        this.sacrificeEnabled = this.levelConfig.sacrificeEnabled;
+        this.difficultyMultiplier = this.levelConfig.difficultyMultiplier;
+        this.initialWeapon = this.levelConfig.initialWeapon;
+        
+        this.levelTotalWaves = this.levelConfig.waves.length;
+        this.levelWavesCompleted = 0;
+        this.levelWaveSpawnCount = 0;
+        this.levelWaveKilledCount = 0;
+        this.levelComplete = false;
+        this.levelFailed = false;
+        
+        this.currentWave = 0;
+        this.waveState = 'inactive';
+    }
+    
+    getLevelConfig() {
+        return this.levelConfig;
+    }
+    
+    isLevelComplete() {
+        return this.levelComplete;
+    }
+    
+    isLevelFailed() {
+        return this.levelFailed;
+    }
+    
+    getLevelProgress() {
+        return {
+            currentLevel: this.currentLevel,
+            wavesCompleted: this.levelWavesCompleted,
+            totalWaves: this.levelTotalWaves,
+            currentWave: this.currentWave,
+            waveState: this.waveState
+        };
     }
     
     addTurretForWeapon(weaponType) {
@@ -131,7 +200,7 @@ class DefenseSystem {
         this.wallHP = CONSTANTS.WALL.maxHP;
         this.killCount = 0;
         this.defenseScore = 0;
-        this.difficultyMultiplier = 1;
+        this.difficultyMultiplier = this.isLevelMode ? this.levelConfig.difficultyMultiplier : 1;
         this.speedMultiplier = 1.0;
         this.spawnInterval = CONSTANTS.ENEMY.baseSpawnInterval;
         this.lastSpawnTime = performance.now();
@@ -146,23 +215,9 @@ class DefenseSystem {
             SHOTGUN: 0
         };
         
-        this.weaponUnlockStates = {
-            FIRE: true,
-            PIERCE: false,
-            ICE: false,
-            POISON: false,
-            SPACE: false,
-            SHOTGUN: false
-        };
+        this.weaponUnlockStates = this.initWeaponUnlockStates();
         
-        this.weaponLevels = {
-            FIRE: 1,
-            PIERCE: 0,
-            ICE: 0,
-            POISON: 0,
-            SPACE: 0,
-            SHOTGUN: 0
-        };
+        this.weaponLevels = this.initWeaponLevels();
         
         this.totalUpgradePoints = 0;
         
@@ -172,6 +227,12 @@ class DefenseSystem {
         this.waveEnemyCount = 0;
         this.waveKilledCount = 0;
         
+        this.levelWavesCompleted = 0;
+        this.levelWaveSpawnCount = 0;
+        this.levelWaveKilledCount = 0;
+        this.levelComplete = false;
+        this.levelFailed = false;
+        
         this.upgradeSystem.reset();
         
         this.pendingUpgrade = null;
@@ -179,6 +240,46 @@ class DefenseSystem {
         this.pendingUpgradeWeaponType = null;
         
         this.initTurrets();
+    }
+    
+    initWeaponUnlockStates() {
+        const states = {
+            FIRE: false,
+            PIERCE: false,
+            ICE: false,
+            POISON: false,
+            SPACE: false,
+            SHOTGUN: false
+        };
+        
+        if (this.isLevelMode && this.levelConfig) {
+            const initialWeapon = this.levelConfig.initialWeapon || 'FIRE';
+            states[initialWeapon] = true;
+        } else {
+            states.FIRE = true;
+        }
+        
+        return states;
+    }
+    
+    initWeaponLevels() {
+        const levels = {
+            FIRE: 0,
+            PIERCE: 0,
+            ICE: 0,
+            POISON: 0,
+            SPACE: 0,
+            SHOTGUN: 0
+        };
+        
+        if (this.isLevelMode && this.levelConfig) {
+            const initialWeapon = this.levelConfig.initialWeapon || 'FIRE';
+            levels[initialWeapon] = 1;
+        } else {
+            levels.FIRE = 1;
+        }
+        
+        return levels;
     }
     
     setBonuses(bonuses) {
@@ -230,6 +331,12 @@ class DefenseSystem {
     
     checkWeaponUnlock(weaponType) {
         if (this.weaponUnlockStates[weaponType]) return;
+        
+        if (this.isLevelMode && this.levelConfig) {
+            if (!this.levelConfig.availableWeapons.includes(weaponType)) {
+                return;
+            }
+        }
         
         const elapsedMinutes = (performance.now() - this.gameStartTime) / 60000;
         const threshold = this.calculateUpgradeThreshold(Math.max(0, elapsedMinutes));
@@ -529,6 +636,14 @@ class DefenseSystem {
     updateWaveSystem(elapsedSeconds, currentTime, difficulty) {
         if (elapsedSeconds < 0) return;
         
+        if (this.isLevelMode && this.levelConfig) {
+            this.updateLevelWaveSystem(elapsedSeconds, currentTime, difficulty);
+        } else {
+            this.updateEndlessWaveSystem(elapsedSeconds, currentTime, difficulty);
+        }
+    }
+    
+    updateEndlessWaveSystem(elapsedSeconds, currentTime, difficulty) {
         if (this.currentWave === 0 && this.waveState === 'inactive') {
             this.currentWave = 1;
             this.waveState = 'starting';
@@ -603,6 +718,139 @@ class DefenseSystem {
                 }
             }
         }
+    }
+    
+    updateLevelWaveSystem(elapsedSeconds, currentTime, difficulty) {
+        if (this.levelComplete || this.levelFailed) return;
+        
+        const waves = this.levelConfig.waves;
+        const totalWaves = waves.length;
+        
+        if (this.currentWave === 0 && this.waveState === 'inactive') {
+            this.currentWave = 1;
+            this.waveState = 'starting';
+            this.waveStartTime = elapsedSeconds;
+            this.waveKilledCount = 0;
+            this.waveEnemyCount = 0;
+        }
+        
+        if (this.currentWave > totalWaves) {
+            if (this.enemies.length === 0 && this.waveState === 'inactive') {
+                this.levelComplete = true;
+            }
+            return;
+        }
+        
+        const waveIndex = this.currentWave - 1;
+        const waveConfig = waves[waveIndex];
+        
+        if (!waveConfig) return;
+        
+        if (this.waveState === 'inactive') {
+            this.waveState = 'starting';
+            this.waveStartTime = elapsedSeconds;
+            this.waveKilledCount = 0;
+            this.waveEnemyCount = 0;
+        }
+        
+        if (this.waveState === 'starting') {
+            const spawned = this.spawnLevelWaveEnemies(waveConfig, difficulty.hpMultiplier);
+            this.levelWaveSpawnCount += spawned;
+            this.waveEnemyCount += spawned;
+            this.waveState = 'active';
+        }
+        
+        if (this.waveState === 'active') {
+            const waveElapsed = elapsedSeconds - this.waveStartTime;
+            
+            if (waveElapsed >= waveConfig.duration) {
+                this.waveState = 'gap';
+                this.waveStartTime = elapsedSeconds;
+                this.levelWavesCompleted++;
+            } else if (this.enemies.length === 0 && this.waveEnemyCount > 0 && waveElapsed >= 5) {
+                this.waveState = 'gap';
+                this.waveStartTime = elapsedSeconds;
+                this.levelWavesCompleted++;
+            }
+        }
+        
+        if (this.waveState === 'gap') {
+            const gapElapsed = elapsedSeconds - this.waveStartTime;
+            const gapSeconds = 5;
+            
+            if (gapElapsed >= gapSeconds) {
+                if (this.currentWave >= totalWaves) {
+                    this.waveState = 'inactive';
+                } else {
+                    this.currentWave++;
+                    this.waveState = 'starting';
+                    this.waveStartTime = elapsedSeconds;
+                    this.waveKilledCount = 0;
+                    this.waveEnemyCount = 0;
+                }
+            }
+        }
+    }
+    
+    spawnLevelWaveEnemies(waveConfig, baseDifficulty) {
+        const maxSpawnPerBatch = CONSTANTS.ENEMY_SPAWN.maxSpawnPerBatch || 20;
+        const maxEnemiesOnScreen = CONSTANTS.ENEMY_SPAWN.maxEnemiesOnScreen || 200;
+        
+        const currentEnemyCount = this.enemies.length;
+        const availableSlots = maxEnemiesOnScreen - currentEnemyCount;
+        
+        if (availableSlots <= 0) return 0;
+        
+        const actualCount = Math.min(waveConfig.count, maxSpawnPerBatch, availableSlots);
+        const types = waveConfig.types;
+        
+        const elapsedMinutes = (performance.now() - this.gameStartTime) / 60000;
+        let baseDefense = this.calculateEnemyDefense(elapsedMinutes);
+        let difficulty = baseDifficulty;
+        
+        const criticalCount = CONSTANTS.ENEMY_SPAWN.criticalEnemyCount || 100;
+        if (currentEnemyCount >= criticalCount) {
+            const excessCount = currentEnemyCount - criticalCount;
+            const hpMultiplier = Math.pow(
+                CONSTANTS.ENEMY_SPAWN.criticalHpMultiplier || 1.5,
+                Math.floor(excessCount / 10) + 1
+            );
+            const defenseMultiplier = Math.pow(
+                CONSTANTS.ENEMY_SPAWN.criticalDefenseMultiplier || 2.0,
+                Math.floor(excessCount / 10) + 1
+            );
+            
+            difficulty *= hpMultiplier;
+            baseDefense = Math.min(90, baseDefense * defenseMultiplier);
+        }
+        
+        for (let i = 0; i < actualCount; i++) {
+            const type = Utils.randomChoice(types);
+            const x = Utils.randomInt(30, this.canvas.width - 30);
+            const y = -40 - Math.random() * 60 - i * 20;
+            
+            const enemy = new Enemy(x, y, type, difficulty, baseDefense);
+            this.enemies.push(enemy);
+        }
+        
+        return actualCount;
+    }
+    
+    getLevelWaveInfo() {
+        if (!this.isLevelMode || !this.levelConfig) {
+            return null;
+        }
+        
+        return {
+            level: this.currentLevel,
+            levelName: this.levelConfig.name,
+            currentWave: this.currentWave,
+            totalWaves: this.levelConfig.waves.length,
+            wavesCompleted: this.levelWavesCompleted,
+            waveState: this.waveState,
+            isComplete: this.levelComplete,
+            isFailed: this.levelFailed
+        };
     }
     
     update(currentTime) {

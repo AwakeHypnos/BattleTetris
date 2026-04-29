@@ -320,5 +320,214 @@ const CONSTANTS = {
             blockCount: 15,
             color: '#f9ed69'
         }
+    },
+
+    // ============================================
+    // 关卡系统常量
+    // ============================================
+    LEVELS: {
+        1: {
+            name: '第一关 - 新手入门',
+            description: '熟悉基本操作，只有普通敌人',
+            waves: [
+                { types: ['NORMAL'], count: 8, duration: 20 },
+                { types: ['NORMAL'], count: 10, duration: 20 },
+                { types: ['NORMAL'], count: 12, duration: 20 }
+            ],
+            availableColors: ['RED', 'ORANGE'],
+            availableWeapons: ['FIRE', 'PIERCE'],
+            availableEnemies: ['NORMAL'],
+            difficultyMultiplier: 1.0,
+            sacrificeEnabled: false,
+            initialWeapon: 'FIRE'
+        },
+        2: {
+            name: '第二关 - 速度挑战',
+            description: '快速敌人登场，需要冰冻减速',
+            waves: [
+                { types: ['NORMAL'], count: 10, duration: 18 },
+                { types: ['NORMAL'], count: 12, duration: 18 },
+                { types: ['NORMAL'], count: 12, duration: 18 },
+                { types: ['FAST'], count: 15, duration: 15 }
+            ],
+            availableColors: ['RED', 'ORANGE', 'BLUE'],
+            availableWeapons: ['FIRE', 'PIERCE', 'ICE'],
+            availableEnemies: ['NORMAL', 'FAST'],
+            difficultyMultiplier: 1.1,
+            sacrificeEnabled: false,
+            initialWeapon: 'FIRE'
+        },
+        3: {
+            name: '第三关 - 重装来袭',
+            description: '重装敌人血量高，需要持续伤害',
+            waves: [
+                { types: ['NORMAL'], count: 12, duration: 16 },
+                { types: ['NORMAL'], count: 14, duration: 16 },
+                { types: ['FAST'], count: 16, duration: 14 },
+                { types: ['NORMAL', 'FAST'], count: 18, duration: 18 },
+                { types: ['TANK'], count: 8, duration: 25 }
+            ],
+            availableColors: ['RED', 'ORANGE', 'BLUE', 'GREEN'],
+            availableWeapons: ['FIRE', 'PIERCE', 'ICE', 'POISON'],
+            availableEnemies: ['NORMAL', 'FAST', 'TANK'],
+            difficultyMultiplier: 1.2,
+            sacrificeEnabled: false,
+            initialWeapon: 'FIRE'
+        },
+        4: {
+            name: '第四关 - 精英降临',
+            description: '精英敌人出现，需要全面防御',
+            waves: [
+                { types: ['NORMAL'], count: 14, duration: 15 },
+                { types: ['FAST'], count: 18, duration: 12 },
+                { types: ['NORMAL', 'FAST'], count: 20, duration: 16 },
+                { types: ['TANK'], count: 10, duration: 22 },
+                { types: ['NORMAL', 'TANK'], count: 18, duration: 20 },
+                { types: ['ELITE'], count: 6, duration: 30 }
+            ],
+            availableColors: ['RED', 'ORANGE', 'BLUE', 'GREEN', 'PURPLE'],
+            availableWeapons: ['FIRE', 'PIERCE', 'ICE', 'POISON', 'SPACE'],
+            availableEnemies: ['NORMAL', 'FAST', 'TANK', 'ELITE'],
+            difficultyMultiplier: 1.35,
+            sacrificeEnabled: false,
+            initialWeapon: 'FIRE'
+        },
+        5: {
+            name: '第五关 - 全面战争',
+            description: '所有武器和敌人全部开放',
+            waves: [
+                { types: ['NORMAL'], count: 16, duration: 14 },
+                { types: ['FAST'], count: 20, duration: 11 },
+                { types: ['NORMAL', 'FAST'], count: 22, duration: 15 },
+                { types: ['TANK'], count: 12, duration: 20 },
+                { types: ['NORMAL', 'TANK'], count: 20, duration: 18 },
+                { types: ['ELITE'], count: 8, duration: 28 },
+                { types: ['NORMAL', 'FAST', 'TANK', 'ELITE'], count: 25, duration: 25 }
+            ],
+            availableColors: ['RED', 'ORANGE', 'BLUE', 'GREEN', 'PURPLE', 'YELLOW'],
+            availableWeapons: ['FIRE', 'PIERCE', 'ICE', 'POISON', 'SPACE', 'SHOTGUN'],
+            availableEnemies: ['NORMAL', 'FAST', 'TANK', 'ELITE'],
+            difficultyMultiplier: 1.5,
+            sacrificeEnabled: false,
+            initialWeapon: 'FIRE'
+        },
+        6: {
+            name: '第六关 - 难度攀升',
+            description: '敌人强度和数量大幅提升',
+            waves: [
+                { types: ['NORMAL'], count: 18, duration: 13 },
+                { types: ['FAST'], count: 22, duration: 10 },
+                { types: ['TANK'], count: 14, duration: 18 },
+                { types: ['NORMAL', 'FAST'], count: 25, duration: 14 },
+                { types: ['ELITE'], count: 10, duration: 26 },
+                { types: ['TANK', 'ELITE'], count: 15, duration: 28 },
+                { types: ['NORMAL', 'FAST', 'TANK'], count: 28, duration: 20 },
+                { types: ['NORMAL', 'FAST', 'TANK', 'ELITE'], count: 30, duration: 22 }
+            ],
+            availableColors: ['RED', 'ORANGE', 'BLUE', 'GREEN', 'PURPLE', 'YELLOW'],
+            availableWeapons: ['FIRE', 'PIERCE', 'ICE', 'POISON', 'SPACE', 'SHOTGUN'],
+            availableEnemies: ['NORMAL', 'FAST', 'TANK', 'ELITE'],
+            difficultyMultiplier: 1.7,
+            sacrificeEnabled: false,
+            initialWeapon: 'FIRE'
+        },
+        7: {
+            name: '第七关 - 献祭之力',
+            description: '方块献祭功能开放，可消耗方块换取增益',
+            waves: [
+                { types: ['NORMAL'], count: 20, duration: 12 },
+                { types: ['FAST'], count: 25, duration: 9 },
+                { types: ['TANK'], count: 16, duration: 17 },
+                { types: ['ELITE'], count: 12, duration: 24 },
+                { types: ['NORMAL', 'FAST'], count: 28, duration: 13 },
+                { types: ['TANK', 'ELITE'], count: 18, duration: 26 },
+                { types: ['NORMAL', 'FAST', 'TANK'], count: 32, duration: 18 },
+                { types: ['NORMAL', 'FAST', 'TANK', 'ELITE'], count: 35, duration: 20 },
+                { types: ['TANK', 'ELITE'], count: 20, duration: 28 }
+            ],
+            availableColors: ['RED', 'ORANGE', 'BLUE', 'GREEN', 'PURPLE', 'YELLOW'],
+            availableWeapons: ['FIRE', 'PIERCE', 'ICE', 'POISON', 'SPACE', 'SHOTGUN'],
+            availableEnemies: ['NORMAL', 'FAST', 'TANK', 'ELITE'],
+            difficultyMultiplier: 1.9,
+            sacrificeEnabled: true,
+            initialWeapon: 'FIRE'
+        },
+        8: {
+            name: '第八关 - 极限挑战',
+            description: '敌人强度达到新高度',
+            waves: [
+                { types: ['FAST'], count: 28, duration: 8 },
+                { types: ['TANK'], count: 18, duration: 16 },
+                { types: ['ELITE'], count: 14, duration: 22 },
+                { types: ['NORMAL', 'FAST'], count: 32, duration: 12 },
+                { types: ['TANK', 'ELITE'], count: 20, duration: 24 },
+                { types: ['NORMAL', 'FAST', 'TANK'], count: 36, duration: 16 },
+                { types: ['FAST', 'ELITE'], count: 25, duration: 18 },
+                { types: ['NORMAL', 'FAST', 'TANK', 'ELITE'], count: 40, duration: 18 },
+                { types: ['TANK', 'ELITE'], count: 22, duration: 26 },
+                { types: ['NORMAL', 'FAST', 'TANK', 'ELITE'], count: 45, duration: 20 }
+            ],
+            availableColors: ['RED', 'ORANGE', 'BLUE', 'GREEN', 'PURPLE', 'YELLOW'],
+            availableWeapons: ['FIRE', 'PIERCE', 'ICE', 'POISON', 'SPACE', 'SHOTGUN'],
+            availableEnemies: ['NORMAL', 'FAST', 'TANK', 'ELITE'],
+            difficultyMultiplier: 2.15,
+            sacrificeEnabled: true,
+            initialWeapon: 'FIRE'
+        },
+        9: {
+            name: '第九关 - 地狱模式',
+            description: '精英敌人大量出现',
+            waves: [
+                { types: ['FAST'], count: 32, duration: 7 },
+                { types: ['TANK'], count: 20, duration: 15 },
+                { types: ['ELITE'], count: 16, duration: 20 },
+                { types: ['FAST', 'ELITE'], count: 28, duration: 15 },
+                { types: ['TANK', 'ELITE'], count: 22, duration: 22 },
+                { types: ['NORMAL', 'FAST', 'TANK'], count: 40, duration: 14 },
+                { types: ['ELITE'], count: 20, duration: 20 },
+                { types: ['NORMAL', 'FAST', 'TANK', 'ELITE'], count: 45, duration: 16 },
+                { types: ['FAST', 'TANK', 'ELITE'], count: 35, duration: 18 },
+                { types: ['TANK', 'ELITE'], count: 25, duration: 24 },
+                { types: ['NORMAL', 'FAST', 'TANK', 'ELITE'], count: 50, duration: 18 }
+            ],
+            availableColors: ['RED', 'ORANGE', 'BLUE', 'GREEN', 'PURPLE', 'YELLOW'],
+            availableWeapons: ['FIRE', 'PIERCE', 'ICE', 'POISON', 'SPACE', 'SHOTGUN'],
+            availableEnemies: ['NORMAL', 'FAST', 'TANK', 'ELITE'],
+            difficultyMultiplier: 2.4,
+            sacrificeEnabled: true,
+            initialWeapon: 'FIRE'
+        },
+        10: {
+            name: '第十关 - 最终决战',
+            description: '终极挑战，考验你的全部实力',
+            waves: [
+                { types: ['FAST'], count: 35, duration: 6 },
+                { types: ['TANK'], count: 22, duration: 14 },
+                { types: ['ELITE'], count: 18, duration: 18 },
+                { types: ['FAST', 'ELITE'], count: 32, duration: 14 },
+                { types: ['TANK', 'ELITE'], count: 25, duration: 20 },
+                { types: ['NORMAL', 'FAST', 'TANK'], count: 45, duration: 13 },
+                { types: ['ELITE'], count: 22, duration: 18 },
+                { types: ['FAST', 'TANK', 'ELITE'], count: 40, duration: 16 },
+                { types: ['NORMAL', 'FAST', 'TANK', 'ELITE'], count: 50, duration: 15 },
+                { types: ['TANK', 'ELITE'], count: 28, duration: 22 },
+                { types: ['FAST', 'ELITE'], count: 35, duration: 14 },
+                { types: ['NORMAL', 'FAST', 'TANK', 'ELITE'], count: 55, duration: 16 },
+                { types: ['ELITE', 'TANK'], count: 35, duration: 25 },
+                { types: ['NORMAL', 'FAST', 'TANK', 'ELITE'], count: 60, duration: 18 }
+            ],
+            availableColors: ['RED', 'ORANGE', 'BLUE', 'GREEN', 'PURPLE', 'YELLOW'],
+            availableWeapons: ['FIRE', 'PIERCE', 'ICE', 'POISON', 'SPACE', 'SHOTGUN'],
+            availableEnemies: ['NORMAL', 'FAST', 'TANK', 'ELITE'],
+            difficultyMultiplier: 2.7,
+            sacrificeEnabled: true,
+            initialWeapon: 'FIRE'
+        }
+    },
+
+    // 关卡解锁配置
+    LEVEL_UNLOCK: {
+        maxUnlockedLevel: 1,
+        unlockedLevels: [1]
     }
 };

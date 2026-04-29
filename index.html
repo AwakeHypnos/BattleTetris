@@ -216,9 +216,86 @@
             <h1 class="game-title">战斗俄罗斯方块</h1>
             <p class="game-subtitle">塔防融合版</p>
             <div class="main-menu-options">
-                <button class="main-menu-btn primary" id="newGameBtn">新游戏</button>
+                <button class="main-menu-btn primary" id="newGameBtn">无尽模式</button>
+                <button class="main-menu-btn" id="levelModeBtn">闯关模式</button>
                 <button class="main-menu-btn" id="loadGameBtn">读取存档</button>
                 <button class="main-menu-btn secondary" id="howToPlayBtn">游戏说明</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 关卡选择界面 -->
+    <div id="levelSelectOverlay" class="overlay hidden">
+        <div class="level-select-menu">
+            <h2>选择关卡</h2>
+            <div class="level-select-container" id="levelSelectContainer">
+            </div>
+            <button class="back-btn" id="backToMainFromLevelBtn">返回主菜单</button>
+        </div>
+    </div>
+    
+    <!-- 关卡完成/失败界面 -->
+    <div id="levelCompleteOverlay" class="overlay hidden">
+        <div class="level-complete-menu">
+            <h2 id="levelCompleteTitle">关卡完成！</h2>
+            <h3 id="levelCompleteName" class="level-name-display">第一关 - 新手入门</h3>
+            
+            <div class="level-score-display">
+                <h4>详细得分</h4>
+                <div class="level-score-breakdown">
+                    <div class="level-score-item">
+                        <span>方块分数:</span>
+                        <span id="levelScoreTetris">0</span>
+                    </div>
+                    <div class="level-score-item">
+                        <span>塔防分数:</span>
+                        <span id="levelScoreDefense">0</span>
+                    </div>
+                    <div class="level-score-item bonus">
+                        <span>城墙血量加成:</span>
+                        <span id="levelScoreWallHP">+0</span>
+                    </div>
+                    <div class="level-score-item bonus">
+                        <span>连击加成:</span>
+                        <span id="levelScoreCombo">+0</span>
+                    </div>
+                    <div class="level-score-item bonus">
+                        <span>击杀加成:</span>
+                        <span id="levelScoreKill">+0</span>
+                    </div>
+                    <div class="level-score-item bonus">
+                        <span>等级加成:</span>
+                        <span id="levelScoreLevel">+0</span>
+                    </div>
+                </div>
+                <div class="level-total-score">
+                    <span>总得分:</span>
+                    <span id="levelScoreTotal">0</span>
+                </div>
+            </div>
+            
+            <div class="level-stats-display">
+                <h4>游戏统计</h4>
+                <div class="level-stats-grid">
+                    <div class="level-stat-item">
+                        <span class="stat-label">击杀敌人</span>
+                        <span class="stat-value" id="levelStatsKills">0</span>
+                    </div>
+                    <div class="level-stat-item">
+                        <span class="stat-label">最高连击</span>
+                        <span class="stat-value" id="levelStatsCombo">0</span>
+                    </div>
+                    <div class="level-stat-item">
+                        <span class="stat-label">用时</span>
+                        <span class="stat-value" id="levelStatsTime">00:00</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="level-complete-options">
+                <button class="level-complete-btn" id="retryLevelBtn">重新挑战</button>
+                <button class="level-complete-btn primary hidden" id="nextLevelBtn">下一关</button>
+                <button class="level-complete-btn secondary" id="levelSelectBtn">关卡选择</button>
             </div>
         </div>
     </div>

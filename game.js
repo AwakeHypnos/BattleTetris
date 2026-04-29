@@ -51,6 +51,7 @@ class BattleTetrisGame {
         this.isInMainMenu = true;
         this.isInUpgradeMenu = false;
         this.isInGameOverMenu = false;
+        this.isInLevelSelectMenu = false;
         
         this.turretOverloadActive = false;
         this.turretOverloadEndTime = 0;
@@ -59,6 +60,47 @@ class BattleTetrisGame {
         
         this.sacrificeMode = false;
         this.sacrificeFromPause = false;
+        
+        this.isLevelMode = false;
+        this.currentLevelNumber = 0;
+        this.levelComplete = false;
+        this.levelFailed = false;
+        
+        this.loadUnlockedLevels();
+    }
+    
+    loadUnlockedLevels() {
+        try {
+            const saved = localStorage.getItem('battle_tetris_unlocked_levels');
+            if (saved) {
+                this.unlockedLevels = JSON.parse(saved);
+            } else {
+                this.unlockedLevels = [1];
+            }
+        } catch (e) {
+            this.unlockedLevels = [1];
+        }
+    }
+    
+    saveUnlockedLevels() {
+        try {
+            localStorage.setItem('battle_tetris_unlocked_levels', JSON.stringify(this.unlockedLevels));
+        } catch (e) {
+            console.error('保存关卡解锁状态失败:', e);
+        }
+    }
+    
+    unlockNextLevel(currentLevel) {
+        const nextLevel = currentLevel + 1;
+        if (nextLevel <= 10 && !this.unlockedLevels.includes(nextLevel)) {
+            this.unlockedLevels.push(nextLevel);
+            this.unlockedLevels.sort((a, b) => a - b);
+            this.saveUnlockedLevels();
+        }
+    }
+    
+    isLevelUnlocked(levelNumber) {
+        return this.unlockedLevels.includes(levelNumber);
     }
     
     createEmptyGrid() {
@@ -133,8 +175,18 @@ class BattleTetrisGame {
         document.getElementById('restartBtn').addEventListener('click', () => this.restartGame());
         
         document.getElementById('newGameBtn').addEventListener('click', () => this.startNewGame());
+        document.getElementById('levelModeBtn').addEventListener('click', () => this.showLevelSelectMenu());
         document.getElementById('loadGameBtn').addEventListener('click', () => this.loadGameFromMenu());
         document.getElementById('howToPlayBtn').addEventListener('click', () => this.showHowToPlay());
+        
+        document.getElementById('backToMainFromLevelBtn').addEventListener('click', () => {
+            this.hideLevelSelectMenu();
+            this.returnToMainMenu();
+        });
+        
+        document.getElementById('retryLevelBtn').addEventListener('click', () => this.retryLevel());
+        document.getElementById('nextLevelBtn').addEventListener('click', () => this.goToNextLevel());
+        document.getElementById('levelSelectBtn').addEventListener('click', () => this.returnToLevelSelect());
         
         document.getElementById('resumeBtn').addEventListener('click', () => this.resumeGame());
         document.getElementById('showUpgradesBtn').addEventListener('click', () => this.showUnlockedUpgrades());
@@ -215,7 +267,8 @@ class BattleTetrisGame {
     
     generatePiece() {
         const size = Utils.randomInt(CONSTANTS.MIN_BLOCK_SIZE, CONSTANTS.MAX_BLOCK_SIZE);
-        const color = Utils.randomChoice(CONSTANTS.BLOCK_COLORS);
+        const availableColors = this.getAvailableColors();
+        const color = Utils.randomChoice(availableColors);
         const shape = Utils.generateBlockShape(size);
         
         let minX = Infinity, maxX = -Infinity;
@@ -232,6 +285,20 @@ class BattleTetrisGame {
             x: centerX,
             y: 0
         };
+    }
+    
+    getAvailableColors() {
+        if (this.defenseSystem && this.defenseSystem.isLevelMode && this.defenseSystem.availableColors) {
+            return this.defenseSystem.availableColors;
+        }
+        return CONSTANTS.BLOCK_COLORS;
+    }
+    
+    isSacrificeEnabled() {
+        if (this.defenseSystem && this.defenseSystem.isLevelMode) {
+            return this.defenseSystem.sacrificeEnabled;
+        }
+        return true;
     }
     
     canMove(piece, offsetX = 0, offsetY = 0) {
@@ -1004,7 +1071,18 @@ class BattleTetrisGame {
         this.defenseSystem.update(timestamp);
         
         if (this.defenseSystem.isGameOver()) {
-            this.endGame();
+            if (this.isLevelMode) {
+                this.levelFailed = true;
+                this.endLevel(false);
+            } else {
+                this.endGame();
+            }
+            return;
+        }
+        
+        if (this.isLevelMode && this.defenseSystem.isLevelComplete()) {
+            this.levelComplete = true;
+            this.endLevel(true);
             return;
         }
         
@@ -1012,6 +1090,147 @@ class BattleTetrisGame {
         this.render();
         
         this.animationId = requestAnimationFrame((t) => this.gameLoop(t));
+    }
+    
+    endLevel(isVictory) {
+        this.gameOver = true;
+        this.stopDropTimer();
+        
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+        }
+        
+        if (isVictory) {
+            this.unlockNextLevel(this.currentLevelNumber);
+            this.showLevelCompleteMenu();
+        } else {
+            this.showLevelFailedMenu();
+        }
+        
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('pauseBtn').disabled = true;
+        document.getElementById('saveBtn').disabled = true;
+    }
+    
+    calculateLevelScore() {
+        const gameMinutes = Math.max(1, Math.floor(this.survivalTime / 60));
+        const wallHPBonus = Math.max(0, this.defenseSystem.wallHP) * CONSTANTS.SCORING.WALL_HP_BONUS;
+        const comboBonus = this.maxCombo * CONSTANTS.SCORING.COMBO_BONUS;
+        const killBonus = this.defenseSystem.killCount * CONSTANTS.SCORING.KILL_BONUS;
+        const levelBonus = this.level * CONSTANTS.SCORING.LEVEL_BONUS;
+        
+        const totalScore = Math.floor(
+            this.defenseSystem.defenseScore +
+            this.tetrisScore * gameMinutes +
+            wallHPBonus +
+            comboBonus +
+            killBonus +
+            levelBonus
+        );
+        
+        return {
+            tetrisScore: this.tetrisScore,
+            defenseScore: this.defenseSystem.defenseScore,
+            wallHPBonus: wallHPBonus,
+            comboBonus: comboBonus,
+            killBonus: killBonus,
+            levelBonus: levelBonus,
+            totalScore: totalScore,
+            killCount: this.defenseSystem.killCount,
+            maxCombo: this.maxCombo,
+            survivalTime: this.survivalTime,
+            level: this.level,
+            currentLevel: this.currentLevelNumber
+        };
+    }
+    
+    showLevelCompleteMenu() {
+        this.isInGameOverMenu = true;
+        
+        const scoreData = this.calculateLevelScore();
+        const levelConfig = CONSTANTS.LEVELS[this.currentLevelNumber];
+        
+        document.getElementById('levelCompleteOverlay').classList.remove('hidden');
+        
+        document.getElementById('levelCompleteTitle').textContent = '关卡完成！';
+        document.getElementById('levelCompleteName').textContent = levelConfig.name;
+        
+        document.getElementById('levelScoreTetris').textContent = Utils.formatScore(scoreData.tetrisScore);
+        document.getElementById('levelScoreDefense').textContent = Utils.formatScore(scoreData.defenseScore);
+        document.getElementById('levelScoreWallHP').textContent = `+${scoreData.wallHPBonus}`;
+        document.getElementById('levelScoreCombo').textContent = `+${scoreData.comboBonus}`;
+        document.getElementById('levelScoreKill').textContent = `+${scoreData.killBonus}`;
+        document.getElementById('levelScoreLevel').textContent = `+${scoreData.levelBonus}`;
+        document.getElementById('levelScoreTotal').textContent = Utils.formatScore(scoreData.totalScore);
+        
+        document.getElementById('levelStatsKills').textContent = scoreData.killCount;
+        document.getElementById('levelStatsCombo').textContent = scoreData.maxCombo;
+        const minutes = Math.floor(scoreData.survivalTime / 60);
+        const seconds = Math.floor(scoreData.survivalTime % 60);
+        document.getElementById('levelStatsTime').textContent = 
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        if (this.currentLevelNumber < 10) {
+            document.getElementById('nextLevelBtn').classList.remove('hidden');
+        } else {
+            document.getElementById('nextLevelBtn').classList.add('hidden');
+        }
+    }
+    
+    showLevelFailedMenu() {
+        this.isInGameOverMenu = true;
+        
+        const scoreData = this.calculateLevelScore();
+        const levelConfig = CONSTANTS.LEVELS[this.currentLevelNumber];
+        
+        document.getElementById('levelCompleteOverlay').classList.remove('hidden');
+        
+        document.getElementById('levelCompleteTitle').textContent = '关卡失败';
+        document.getElementById('levelCompleteName').textContent = levelConfig.name;
+        
+        document.getElementById('levelScoreTetris').textContent = Utils.formatScore(scoreData.tetrisScore);
+        document.getElementById('levelScoreDefense').textContent = Utils.formatScore(scoreData.defenseScore);
+        document.getElementById('levelScoreWallHP').textContent = `+${scoreData.wallHPBonus}`;
+        document.getElementById('levelScoreCombo').textContent = `+${scoreData.comboBonus}`;
+        document.getElementById('levelScoreKill').textContent = `+${scoreData.killBonus}`;
+        document.getElementById('levelScoreLevel').textContent = `+${scoreData.levelBonus}`;
+        document.getElementById('levelScoreTotal').textContent = Utils.formatScore(scoreData.totalScore);
+        
+        document.getElementById('levelStatsKills').textContent = scoreData.killCount;
+        document.getElementById('levelStatsCombo').textContent = scoreData.maxCombo;
+        const minutes = Math.floor(scoreData.survivalTime / 60);
+        const seconds = Math.floor(scoreData.survivalTime % 60);
+        document.getElementById('levelStatsTime').textContent = 
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        document.getElementById('nextLevelBtn').classList.add('hidden');
+    }
+    
+    hideLevelCompleteMenu() {
+        document.getElementById('levelCompleteOverlay').classList.add('hidden');
+    }
+    
+    retryLevel() {
+        this.hideLevelCompleteMenu();
+        this.startLevel(this.currentLevelNumber);
+    }
+    
+    goToNextLevel() {
+        this.hideLevelCompleteMenu();
+        const nextLevel = this.currentLevelNumber + 1;
+        if (nextLevel <= 10 && this.isLevelUnlocked(nextLevel)) {
+            this.startLevel(nextLevel);
+        } else {
+            this.returnToLevelSelect();
+        }
+    }
+    
+    returnToLevelSelect() {
+        this.hideLevelCompleteMenu();
+        this.returnToMainMenu();
+        setTimeout(() => {
+            this.showLevelSelectMenu();
+        }, 100);
     }
     
     checkTurretOverloadExpiry(currentTime) {
@@ -1039,6 +1258,7 @@ class BattleTetrisGame {
         this.initGameState();
         this.isInMainMenu = false;
         this.isStarted = true;
+        this.isLevelMode = false;
         this.gameStartTime = Date.now();
         this.survivalTime = 0;
         this.lastFrameTime = performance.now();
@@ -1057,6 +1277,130 @@ class BattleTetrisGame {
         document.getElementById('startBtn').disabled = true;
         document.getElementById('pauseBtn').disabled = false;
         document.getElementById('saveBtn').disabled = false;
+    }
+    
+    startLevel(levelNumber) {
+        if (!this.isLevelUnlocked(levelNumber)) {
+            this.showSkillNotification('该关卡尚未解锁！', '#e94560');
+            return;
+        }
+        
+        this.currentLevelNumber = levelNumber;
+        this.levelComplete = false;
+        this.levelFailed = false;
+        
+        this.initGameState();
+        this.isInMainMenu = false;
+        this.isInLevelSelectMenu = false;
+        this.isStarted = true;
+        this.isLevelMode = true;
+        this.gameStartTime = Date.now();
+        this.survivalTime = 0;
+        this.lastFrameTime = performance.now();
+        
+        this.defenseSystem.setLevel(levelNumber);
+        this.defenseSystem.reset();
+        this.defenseSystem.start();
+        
+        this.hideSpeedControl();
+        
+        this.spawnNewPiece();
+        this.startDropTimer();
+        this.updateUI();
+        
+        this.animationId = requestAnimationFrame((t) => this.gameLoop(t));
+        
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('pauseBtn').disabled = false;
+        document.getElementById('saveBtn').disabled = false;
+        
+        this.showSkillNotification(CONSTANTS.LEVELS[levelNumber].name, '#4ecca3');
+    }
+    
+    showLevelSelectMenu() {
+        this.isInLevelSelectMenu = true;
+        this.ui.mainMenu.classList.add('hidden');
+        
+        const levelSelectOverlay = document.getElementById('levelSelectOverlay');
+        if (levelSelectOverlay) {
+            levelSelectOverlay.classList.remove('hidden');
+            this.renderLevelSelectMenu();
+        }
+    }
+    
+    hideLevelSelectMenu() {
+        this.isInLevelSelectMenu = false;
+        const levelSelectOverlay = document.getElementById('levelSelectOverlay');
+        if (levelSelectOverlay) {
+            levelSelectOverlay.classList.add('hidden');
+        }
+    }
+    
+    renderLevelSelectMenu() {
+        const container = document.getElementById('levelSelectContainer');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        for (let level = 1; level <= 10; level++) {
+            const levelConfig = CONSTANTS.LEVELS[level];
+            const isUnlocked = this.isLevelUnlocked(level);
+            
+            const levelCard = document.createElement('div');
+            levelCard.className = `level-card ${isUnlocked ? '' : 'locked'}`;
+            levelCard.dataset.level = level;
+            
+            if (isUnlocked) {
+                levelCard.addEventListener('click', () => {
+                    this.hideLevelSelectMenu();
+                    this.startLevel(level);
+                });
+            }
+            
+            const levelNum = document.createElement('div');
+            levelNum.className = 'level-number';
+            levelNum.textContent = level;
+            
+            const levelName = document.createElement('div');
+            levelName.className = 'level-name';
+            levelName.textContent = isUnlocked ? levelConfig.name : '???';
+            
+            const levelDesc = document.createElement('div');
+            levelDesc.className = 'level-description';
+            levelDesc.textContent = isUnlocked ? levelConfig.description : '完成前一关卡解锁';
+            
+            const levelInfo = document.createElement('div');
+            levelInfo.className = 'level-info';
+            
+            if (isUnlocked) {
+                const waveCount = document.createElement('span');
+                waveCount.textContent = `波次: ${levelConfig.waves.length}`;
+                levelInfo.appendChild(waveCount);
+                
+                const difficulty = document.createElement('span');
+                difficulty.textContent = `难度: ${levelConfig.difficultyMultiplier}x`;
+                levelInfo.appendChild(difficulty);
+                
+                if (levelConfig.sacrificeEnabled) {
+                    const sacrifice = document.createElement('span');
+                    sacrifice.className = 'sacrifice-enabled';
+                    sacrifice.textContent = '献祭: 开启';
+                    levelInfo.appendChild(sacrifice);
+                }
+            } else {
+                const lockText = document.createElement('span');
+                lockText.className = 'locked-text';
+                lockText.textContent = '🔒 未解锁';
+                levelInfo.appendChild(lockText);
+            }
+            
+            levelCard.appendChild(levelNum);
+            levelCard.appendChild(levelName);
+            levelCard.appendChild(levelDesc);
+            levelCard.appendChild(levelInfo);
+            
+            container.appendChild(levelCard);
+        }
     }
     
     togglePause() {
@@ -1159,6 +1503,11 @@ class BattleTetrisGame {
     }
     
     showSacrificeMenu() {
+        if (!this.isSacrificeEnabled()) {
+            this.showSkillNotification('方块献祭功能在第7关才开放！', '#e94560');
+            return;
+        }
+        
         this.sacrificeMode = true;
         this.sacrificeFromPause = false;
         this.isPaused = true;
@@ -1168,6 +1517,11 @@ class BattleTetrisGame {
     }
     
     showSacrificeMenuFromPause() {
+        if (!this.isSacrificeEnabled()) {
+            this.showSkillNotification('方块献祭功能在第7关才开放！', '#e94560');
+            return;
+        }
+        
         this.sacrificeMode = true;
         this.sacrificeFromPause = true;
         

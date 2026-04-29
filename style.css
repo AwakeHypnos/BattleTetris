@@ -1086,3 +1086,335 @@ button:disabled {
 .animate-shake {
     animation: shake 0.3s ease-in-out;
 }
+
+/* 关卡选择菜单 */
+.level-select-menu {
+    background: linear-gradient(135deg, #16213e, #0f3460);
+    border: 3px solid #4ecca3;
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.level-select-menu h2 {
+    color: #4ecca3;
+    font-size: 28px;
+    margin-bottom: 30px;
+    text-shadow: 0 2px 10px rgba(78, 204, 163, 0.5);
+}
+
+.level-select-container {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.level-card {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 2px solid #0f3460;
+    border-radius: 12px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.level-card:hover:not(.locked) {
+    transform: translateY(-5px);
+    border-color: #4ecca3;
+    box-shadow: 0 8px 25px rgba(78, 204, 163, 0.3);
+}
+
+.level-card.locked {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background: linear-gradient(135deg, #0a0a1a, #1a1a2e);
+}
+
+.level-number {
+    font-size: 32px;
+    font-weight: bold;
+    color: #4ecca3;
+    margin-bottom: 5px;
+    text-shadow: 0 2px 5px rgba(78, 204, 163, 0.5);
+}
+
+.level-card.locked .level-number {
+    color: #666;
+}
+
+.level-name {
+    font-size: 12px;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.level-card.locked .level-name {
+    color: #666;
+}
+
+.level-description {
+    font-size: 10px;
+    color: #aaa;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.level-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 9px;
+}
+
+.level-info span {
+    color: #888;
+}
+
+.level-info .sacrifice-enabled {
+    color: #ff6b6b;
+}
+
+.level-info .locked-text {
+    color: #e94560;
+    font-size: 11px;
+}
+
+.back-btn {
+    padding: 12px 40px;
+    font-size: 16px;
+    background: transparent;
+    border: 2px solid #666;
+    color: #aaa;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    border-color: #e94560;
+    color: #e94560;
+}
+
+/* 关卡完成菜单 */
+.level-complete-menu {
+    background: linear-gradient(135deg, #16213e, #0f3460);
+    border: 3px solid #4ecca3;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    min-width: 500px;
+    max-width: 90%;
+}
+
+.level-complete-menu h2 {
+    color: #4ecca3;
+    font-size: 32px;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 10px rgba(78, 204, 163, 0.5);
+}
+
+.level-complete-menu h2:has(+ .level-name-display + .level-score-display + .level-stats-display + .level-complete-options #retryLevelBtn:not(.hidden) + #nextLevelBtn.hidden) {
+    color: #e94560;
+}
+
+.level-name-display {
+    color: #aaa;
+    font-size: 18px;
+    margin-bottom: 30px;
+}
+
+.level-score-display {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.level-score-display h4 {
+    color: #4ecca3;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.level-score-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.level-score-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+}
+
+.level-score-item.bonus {
+    background: rgba(78, 204, 163, 0.1);
+}
+
+.level-score-item.bonus span:last-child {
+    color: #4ecca3;
+}
+
+.level-total-score {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background: rgba(233, 69, 96, 0.2);
+    border: 2px solid #e94560;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.level-total-score span:last-child {
+    color: #e94560;
+    font-size: 24px;
+}
+
+.level-stats-display {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.level-stats-display h4 {
+    color: #4ecca3;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.level-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.level-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.stat-label {
+    color: #888;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    color: #fff;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.level-complete-options {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.level-complete-btn {
+    padding: 15px 30px;
+    font-size: 16px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #666, #444);
+    border: 2px solid #666;
+    color: #fff;
+}
+
+.level-complete-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.level-complete-btn.primary {
+    background: linear-gradient(135deg, #4ecca3, #45b393);
+    border-color: #4ecca3;
+}
+
+.level-complete-btn.secondary {
+    background: transparent;
+    border-color: #666;
+    color: #aaa;
+}
+
+.level-complete-btn.secondary:hover {
+    border-color: #e94560;
+    color: #e94560;
+}
+
+/* 关卡失败时的颜色调整 */
+.level-complete-menu:has(#nextLevelBtn.hidden) {
+    border-color: #e94560;
+}
+
+.level-complete-menu:has(#nextLevelBtn.hidden) h2 {
+    color: #e94560;
+}
+
+/* 响应式设计 */
+@media (max-width: 900px) {
+    .level-select-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .level-complete-menu {
+        min-width: 90%;
+        padding: 20px;
+    }
+    
+    .level-stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .level-complete-options {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 500px) {
+    .level-select-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .level-card {
+        min-height: 100px;
+        padding: 10px;
+    }
+    
+    .level-number {
+        font-size: 24px;
+    }
+    
+    .level-complete-menu {
+        padding: 15px;
+    }
+    
+    .level-score-breakdown {
+        font-size: 12px;
+    }
+}
