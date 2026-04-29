@@ -726,6 +726,13 @@ class DefenseSystem {
         const waves = this.levelConfig.waves;
         const totalWaves = waves.length;
         
+        if (this.levelWavesCompleted >= totalWaves) {
+            if (this.enemies.length === 0) {
+                this.levelComplete = true;
+            }
+            return;
+        }
+        
         if (this.currentWave === 0 && this.waveState === 'inactive') {
             this.currentWave = 1;
             this.waveState = 'starting';
@@ -734,19 +741,12 @@ class DefenseSystem {
             this.waveEnemyCount = 0;
         }
         
-        if (this.currentWave > totalWaves) {
-            if (this.enemies.length === 0 && this.waveState === 'inactive') {
-                this.levelComplete = true;
-            }
-            return;
-        }
-        
         const waveIndex = this.currentWave - 1;
         const waveConfig = waves[waveIndex];
         
         if (!waveConfig) return;
         
-        if (this.waveState === 'inactive') {
+        if (this.waveState === 'inactive' && this.levelWavesCompleted < totalWaves) {
             this.waveState = 'starting';
             this.waveStartTime = elapsedSeconds;
             this.waveKilledCount = 0;
@@ -779,7 +779,7 @@ class DefenseSystem {
             const gapSeconds = 5;
             
             if (gapElapsed >= gapSeconds) {
-                if (this.currentWave >= totalWaves) {
+                if (this.levelWavesCompleted >= totalWaves) {
                     this.waveState = 'inactive';
                 } else {
                     this.currentWave++;

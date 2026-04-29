@@ -1285,11 +1285,12 @@ class BattleTetrisGame {
             return;
         }
         
+        this.initGameState();
+        
         this.currentLevelNumber = levelNumber;
         this.levelComplete = false;
         this.levelFailed = false;
         
-        this.initGameState();
         this.isInMainMenu = false;
         this.isInLevelSelectMenu = false;
         this.isStarted = true;
